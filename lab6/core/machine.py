@@ -47,6 +47,7 @@ class Course(Segments):
         self.notes = set()
         self.want_land = False
         self.last_dbg = 0.0
+        self.dbg_track = (None, None)      # 只給 log / HUD 看: (時間, marker id) = 最後一次 track() 在追哪個 marker
 
     # ---------------- 狀態切換 ----------------
     def enter(self, state, now):
@@ -161,6 +162,7 @@ class Course(Segments):
         self.enter(state, now)
 
     def abort(self, now, why):
+        self.dbg_abort = why                            # 只給 log 看: 最後一次切回手動的原因
         if self.state != MANUAL:
             print("[%.1f] back to manual (%s)" % (now, why))
         self.state = MANUAL
@@ -168,6 +170,7 @@ class Course(Segments):
     # ---------------- 量測 ----------------
     def track(self, markers, mid, now):
         """目標 marker 的平滑量測 (x, y, z, ang); 看不到回傳 None"""
+        self.dbg_track = (now, mid)                     # 只給 log / HUD 看, 不影響控制
         m = markers.get(mid)
         if m is None:
             if self.lost_since is None:

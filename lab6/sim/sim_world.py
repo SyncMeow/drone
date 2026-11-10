@@ -193,8 +193,15 @@ def run(script, max_iter, start=(0.0, 0.0), start_psi=0.0):
     START, START_PSI = start, start_psi
     STATE_T.clear()
     drone = FakeTello()
-    app.run(drone, clock=clock, io=SimIO(script, max_iter))
+    app.run(drone, clock=clock, io=SimIO(script, max_iter), **LOG_OPTS)
     return drone
+
+
+# log 資料夾 (logs/..._sim) + 錄影 + HUD: 預設關 (劇本跑得快、不產生一堆資料夾); SIM_LOG=1 python run_seg345.py 打開
+# 開或關, 終端機輸出都一樣
+LOG_OPTS = dict(log=False, record=False, hud=False, tag="sim")
+if os.environ.get("SIM_LOG", "") not in ("", "0"):
+    LOG_OPTS = dict(log=True, record=True, hud=True, tag="sim")
 
 
 def states_line():

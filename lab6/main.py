@@ -45,7 +45,18 @@ Keys (the "drone" window must have focus, keyboard input method set to English)
     any operation key (w s a d x z c v 1 2 3) during autonomous flight => back to manual immediately;
         press g..l to resume
     q / ESC quit (stop and land); Ctrl+C also lands
+
+Window: video + right panel (state, segment, target marker, rc bars, battery / temperature, video fps,
+timer, key hints) + bottom bar with the latest messages (warnings in red/orange).
+
+Logs: every run writes logs/YYYYmmdd_HHMMSS_real/ (flight.log, telemetry.csv, events.jsonl, params.json,
+fpv_raw.mp4, fpv_hud.mp4). Plot one with: python tools/plot_log.py logs/<dir>
+Options:
+    --no-record     no mp4 files (logs are still written)
+    --no-hud-video  record only fpv_raw.mp4 (saves CPU)
+    --no-hud        plain video window (old 3-line overlay), no fpv_hud.mp4
 """
+import argparse
 import os
 import sys
 
@@ -57,7 +68,17 @@ from core.app import run                                            # noqa: E402
 
 
 def main():
-    run(Tello())
+    ap = argparse.ArgumentParser(description="midterm course (Tello)")
+    ap.add_argument("--no-record", action="store_true", help="do not record fpv_raw.mp4 / fpv_hud.mp4")
+    ap.add_argument("--no-hud-video", action="store_true", help="do not record fpv_hud.mp4")
+    ap.add_argument("--no-hud", action="store_true", help="plain video window instead of the HUD")
+    args = ap.parse_args()
+    try:
+        run(Tello(), record=not args.no_record, hud_video=not args.no_hud_video, hud=not args.no_hud)
+    finally:
+        bb = getattr(run, "blackbox", None)
+        if bb is not None and bb.flog.dir is not None:
+            print("log directory:", bb.flog.dir)
 
 
 if __name__ == '__main__':
