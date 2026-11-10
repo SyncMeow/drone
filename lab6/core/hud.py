@@ -87,6 +87,7 @@ def key_hints(state):
 
 
 def _t(img, text, org, scale=0.5, color=WHITE, thick=1):
+    text = text.replace(u"\u00b0", "").encode("ascii", "replace").decode("ascii")   # putText 只能畫 ASCII
     cv2.putText(img, text, org, FONT, scale, color, thick, cv2.LINE_AA)
 
 
