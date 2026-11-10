@@ -26,15 +26,31 @@ from core.vision import detect_markers, load_calib, make_detector, marker_obj_po
 
 
 class CvIO(object):
-    """預設的視窗 / 鍵盤: OpenCV"""
+    """預設的視窗 / 鍵盤: OpenCV
+    scale: 顯示的縮放倍率 (只縮顯示, 錄影是原尺寸); None = 自動, 讓畫面塞得進螢幕 (core/display.py)"""
 
-    def __init__(self, window=None):
+    def __init__(self, window=None, scale=None):
         self.window = P.WINDOW if window is None else window
+        self.scale = scale
+        self._auto = {}                                 # 畫面大小 -> 自動倍率
+        if scale is None:
+            from core.display import screen_size
+            screen_size()                               # 先問好螢幕大小 (子行程, 約 0.3 s), 不要在飛行迴圈裡問
 
     def wait_key(self, ms):
         return cv2.waitKey(ms)
 
     def show(self, image):
+        scale = self.scale
+        if scale is None:
+            hw = image.shape[:2]
+            if hw not in self._auto:
+                from core.display import fit_scale
+                self._auto[hw] = fit_scale(hw[1], hw[0])
+            scale = self._auto[hw]
+        if abs(scale - 1.0) > 1e-3:
+            from core.display import shrink
+            image = shrink(image, scale)
         cv2.imshow(self.window, image)
 
     def close(self):
@@ -95,6 +111,8 @@ def _run(drone, clock, io, bb):
     course = Course(drone, clock, bb.wrap_on_enter(getattr(io, "on_enter", None)))
     bb.attach(course, drone)
     bb.snapshot()
+    if hasattr(io, "attach_blackbox"):                 # 模擬器: 把 sim 的真值 / 碰撞也寫進同一個 log 資料夾
+        io.attach_blackbox(bb, course)
     manual_drone = LimitedDrone(drone, P.MANUAL_MAX)
     key_expire = 0.0
     interrupted = False

@@ -1,0 +1,92 @@
+// Flight simulator physics (sim/physics.py, sim/tello_sim.py). JSON with // comments.
+// Units: cm, s, deg unless noted. Values are estimates for a DJI Tello; edit freely.
+// Run with --ideal to apply the "ideal" preset at the bottom (no inertia / latency / noise),
+// which behaves like the old kinematic sim (sim_world.py): rc value * scale = velocity at once.
+{
+  "body": {
+    "mass_kg": 0.080,                  // Tello incl. battery + props
+    "gravity_cm_s2": 981.0,
+    "half_size_cm": [5.0, 5.0, 2.0],   // collision box half sizes (98 x 92 x 41 mm with guards)
+    "camera_forward_cm": 4.0,          // camera sits this far in front of the body centre
+    "camera_pitch_deg": 10.0           // camera looks down by this much (CAM_PITCH_DEG, estimate)
+  },
+
+  "control": {
+    "kinematic": false,                // true = no dynamics: velocity = rc * scale immediately (old sim)
+    "rc_to_cm_s_horizontal": 0.85,     // rc 1 -> 0.85 cm/s target speed (S3_UNDER_CM_PER_RC)
+    "rc_to_cm_s_vertical": 0.85,       // up / down
+    "rc_to_deg_s_yaw": 1.0,            // rc 1 -> 1 deg/s (YAW_RC_TO_DEG)
+    "vel_loop_gain_1_s": 2.5,          // inner velocity loop: desired accel = gain * (v_target - v) (+ drag feed-forward)
+    "max_tilt_deg": 20.0,              // body tilt limit (limits horizontal acceleration to g * tan(tilt))
+    "tilt_tau_s": 0.12,                // body tilt follows the commanded tilt with this time constant
+    "drag_kg_s": 0.02,                 // linear air drag F = -k v  (acceleration -k/m v)
+    "vz_tau_s": 0.25,                  // vertical speed response time constant
+    "max_accel_up_cm_s2": 350.0,       // vertical acceleration limits (thrust headroom)
+    "max_accel_down_cm_s2": 300.0,
+    "yaw_tau_s": 0.15,                 // yaw rate response time constant
+    "command_latency_s": 0.06          // rc command applied this long after send_rc_control
+  },
+
+  "flight": {
+    "takeoff_height_cm": 80.0,         // takeoff climbs to this TOF height
+    "takeoff_speed_cm_s": 70.0,
+    "land_speed_cm_s": 45.0,
+    "blocking_takeoff_land": true,     // takeoff() / land() / rotate_*() return after finishing (like djitellopy); sim time advances meanwhile
+    "auto_land_no_command_s": 15.0,    // Tello lands by itself after this long without any command
+    "min_hover_tof_cm": 20.0,          // rc down stops at this TOF height (no landing by rc)
+    "ground_tof_cm": 10.0              // TOF reading when sitting on a surface (real Tello shows ~10)
+  },
+
+  "video": {
+    "fps": 30.0,                       // camera frame rate
+    "latency_s": 0.15,                 // frame shows the scene this long ago
+    "drop_prob": 0.03,                 // probability that a frame never arrives
+    "corner_noise_px": 0.3             // gaussian noise (std, px) on rendered marker corners
+  },
+
+  "disturbance": {
+    "yaw_drift_deg_s": 0.3,            // heading slowly turns by itself
+    "wind_cm_s2": [0.0, 0.0],          // constant horizontal push (acceleration, world X / Y)
+    "gust_std_cm_s2": 6.0,             // random gust acceleration (std of an Ornstein-Uhlenbeck process)
+    "gust_tau_s": 1.5
+  },
+
+  "sensors": {
+    "tof_noise_cm": 1.0,               // std
+    "yaw_noise_deg": 0.3,              // std
+    "baro_noise_cm": 2.0               // std on "h"
+  },
+
+  "collision": {
+    "behaviour": "stop",               // "stop" = push out + stop that velocity component; "fall" = motors stop, drone falls
+    "land_contact_speed_cm_s": 60.0    // touching a top surface slower than this (from above) counts as landing, not a crash
+  },
+
+  "power": {
+    "battery_start_pct": 90.0,
+    "drain_flying_pct_min": 7.5,       // ~13 min flight
+    "drain_idle_pct_min": 0.5,
+    "temp_start_c": 55.0,              // temph; templ = temph - 2
+    "temp_max_c": 90.0,                // approaches this while powered (streaming), tau below
+    "temp_tau_s": 900.0,
+    "temp_flying_cool_c": 8.0          // equilibrium is this much lower while flying (airflow)
+  },
+
+  "sim": {
+    "physics_dt_s": 0.01,              // fixed physics step (100 Hz)
+    "loop_dt_s": 0.02,                 // sim time advanced by each io.wait_key() call (flight loop period)
+    "trace_dt_s": 0.05,                // ground-truth trace sample period
+    "seed": 0
+  },
+
+  "presets": {
+    // --ideal: comparable with the old kinematic sim (no inertia / latency / noise / drift)
+    "ideal": {
+      "control": {"kinematic": true, "command_latency_s": 0.0},
+      "flight": {"blocking_takeoff_land": true},
+      "video": {"latency_s": 0.0, "drop_prob": 0.0, "corner_noise_px": 0.0},
+      "disturbance": {"yaw_drift_deg_s": 0.0, "wind_cm_s2": [0.0, 0.0], "gust_std_cm_s2": 0.0},
+      "sensors": {"tof_noise_cm": 0.0, "yaw_noise_deg": 0.0, "baro_noise_cm": 0.0}
+    }
+  }
+}

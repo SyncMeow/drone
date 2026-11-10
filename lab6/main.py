@@ -55,6 +55,8 @@ Options:
     --no-record     no mp4 files (logs are still written)
     --no-hud-video  record only fpv_raw.mp4 (saves CPU)
     --no-hud        plain video window (old 3-line overlay), no fpv_hud.mp4
+    --scale S       window display scale (default auto: shrink to fit the screen, e.g. 1440x900 when the
+                    screen size cannot be read; recordings stay full size)
 """
 import argparse
 import os
@@ -64,7 +66,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))     # è®“ core/ å
 
 from djitellopy import Tello                                        # noqa: E402
 
-from core.app import run                                            # noqa: E402
+from core.app import CvIO, run                                      # noqa: E402
+from core.display import parse_scale                                # noqa: E402
 
 
 def main():
@@ -72,9 +75,11 @@ def main():
     ap.add_argument("--no-record", action="store_true", help="do not record fpv_raw.mp4 / fpv_hud.mp4")
     ap.add_argument("--no-hud-video", action="store_true", help="do not record fpv_hud.mp4")
     ap.add_argument("--no-hud", action="store_true", help="plain video window instead of the HUD")
+    ap.add_argument("--scale", default="auto", help="window display scale (0.1-4), or auto = fit the screen")
     args = ap.parse_args()
+    io = CvIO(scale=parse_scale(args.scale))
     try:
-        run(Tello(), record=not args.no_record, hud_video=not args.no_hud_video, hud=not args.no_hud)
+        run(Tello(), io=io, record=not args.no_record, hud_video=not args.no_hud_video, hud=not args.no_hud)
     finally:
         bb = getattr(run, "blackbox", None)
         if bb is not None and bb.flog.dir is not None:
