@@ -42,13 +42,13 @@ def script(i):
 
 
 d = W.run(script, max_iter=700)
-print("\n狀態:", W.states_line())
+print("\nstates:", W.states_line())
 r = W.pose_at(d, "S1_PAUSE2")
 if r:
-    print("右移結束: x = %.0f (marker 2 在 x = %.0f), 機頭 %.1f 度" % (r[0][0], M2[0], r[1]))
+    print("end of right move: x = %.0f (marker 2 at x = %.0f), heading %.1f deg" % (r[0][0], M2[0], r[1]))
 r = W.pose_at(d, "S1_PAUSE3")
 if r:
-    print("停在 marker 2 前: %.0f cm (目標 %.0f)" % (M2[1] - r[0][1], 
+    print("stopped in front of marker 2: %.0f cm (target %.0f)" % (M2[1] - r[0][1], 
           W.P.M2_STOP_DIST))
 fs, fe = W.STATE_T.get("S2_FOLLOW"), W.STATE_T.get("S3_ALIGN", 1e9)
 ds = []
@@ -57,4 +57,4 @@ for (tt, P, psi, c, H) in d.trace:
     if fs is not None and spec and fs + 1 <= tt < fe:
         ds.append(np.hypot(spec[0] - P[0], spec[1] - P[1]))
 if ds:
-    print("第二段跟 marker 0 的距離: 最小 %.0f, 最大 %.0f cm" % (min(ds), max(ds)))
+    print("segment 2 distance to marker 0: min %.0f, max %.0f cm" % (min(ds), max(ds)))

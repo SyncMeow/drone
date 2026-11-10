@@ -1,41 +1,41 @@
 Battery: 80 %
-速度倍率: 平移 x1.30, 上下 x1.30, 旋轉 x1.10
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  MANUAL  ON GROUND  畫面 0.0 fps (處理 0.0 fps)
-還沒起飛: 自動起飛
-進入 S1_APPROACH
-[HH:MM:SS] [計時] 開始
+Speed scale: move x1.30, up/down x1.30, turn x1.10
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  MANUAL  ON GROUND  video 0.0 fps (processed 0.0 fps)
+not flying: taking off
+start S1_APPROACH
+[HH:MM:SS] [timer] start
 [1000.4] MANUAL -> S1_APPROACH
-  到達 marker 1 前 77 cm
+  reached marker 1 at 77 cm
 [1003.7] S1_APPROACH -> S1_PAUSE1
 [1004.6] S1_PAUSE1 -> S1_RIGHT
-  右移中看到 marker 2, x = 79 cm
-  右移達上限 1.2 秒
+  marker 2 seen while moving right, x = 79 cm
+  right move hit the 1.2 s limit
 [1005.8] S1_RIGHT -> S1_PAUSE2
 [1006.6] S1_PAUSE2 -> S1_FORWARD
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S1_FORWARD  FLYING  畫面 16.7 fps (處理 16.6 fps)
-  到達 marker 2 前 154 cm
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S1_FORWARD  FLYING  video 16.7 fps (processed 16.6 fps)
+  reached marker 2 at 154 cm
 [1010.9] S1_FORWARD -> S1_PAUSE3
 [1011.8] S1_PAUSE3 -> S1_LEFT
-  看到手持的 marker 0 (171 cm), 進入第二段
+  hand-held marker 0 seen (171 cm), starting segment 2
 [1013.7] S1_LEFT -> S2_FOLLOW
-  看到 marker 0, 先懸停 1.0 秒再開始跟
-  找不到 marker 0, 往左轉找
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S2_FOLLOW  FLYING  畫面 16.7 fps (處理 16.7 fps)
-進入 S3_ALIGN
+  marker 0 seen, hovering 1.0 s before following
+  marker 0 lost, turning left to search
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S2_FOLLOW  FLYING  video 16.7 fps (processed 16.7 fps)
+start S3_ALIGN
 [1025.8] S2_FOLLOW -> S3_ALIGN
-  看不到 marker 3, 懸停等待
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S3_ALIGN  FLYING  畫面 16.7 fps (處理 16.7 fps)
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S3_ALIGN  FLYING  畫面 16.7 fps (處理 16.7 fps)
+  marker 3 not visible, hovering
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S3_ALIGN  FLYING  video 16.7 fps (processed 16.7 fps)
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S3_ALIGN  FLYING  video 16.7 fps (processed 16.7 fps)
 LAND
-[HH:MM:SS] [計時] 總時間 41.7 秒 (還沒完成)
-[HH:MM:SS] [計時]   第1段 g -> S2_FOLLOW             13.4 秒   32.1%
-[HH:MM:SS] [計時]   第2段 S2_FOLLOW -> S3_ALIGN      12.1 秒   28.9%
-[HH:MM:SS] [計時]   第3段 S3_ALIGN -> S4             -
-[HH:MM:SS] [計時]   第4段 S4 -> S5_ALIGN             -
-[HH:MM:SS] [計時]   第5段 S5_ALIGN -> 降落             -
-[HH:MM:SS] [結束] 這次最高溫度 ?, 最低電量 ?
+[HH:MM:SS] [timer] total 41.7 s (not finished)
+[HH:MM:SS] [timer]   seg 1  g -> S2_FOLLOW          13.4 s   32.1%
+[HH:MM:SS] [timer]   seg 2  S2_FOLLOW -> S3_ALIGN   12.1 s   28.9%
+[HH:MM:SS] [timer]   seg 3  S3_ALIGN -> S4          -
+[HH:MM:SS] [timer]   seg 4  S4 -> S5_ALIGN          -
+[HH:MM:SS] [timer]   seg 5  S5_ALIGN -> land        -
+[HH:MM:SS] [end] max temperature ?, min battery ?
 
-狀態: S1_APPROACH@0.4 -> S1_PAUSE1@3.7 -> S1_RIGHT@4.6 -> S1_PAUSE2@5.8 -> S1_FORWARD@6.6 -> S1_PAUSE3@10.9 -> S1_LEFT@11.8 -> S2_FOLLOW@13.7 -> S3_ALIGN@25.8
-右移結束: x = 44 (marker 2 在 x = 90), 機頭 2.6 度
-停在 marker 2 前: 154 cm (目標 150)
-第二段跟 marker 0 的距離: 最小 68, 最大 172 cm
+states: S1_APPROACH@0.4 -> S1_PAUSE1@3.7 -> S1_RIGHT@4.6 -> S1_PAUSE2@5.8 -> S1_FORWARD@6.6 -> S1_PAUSE3@10.9 -> S1_LEFT@11.8 -> S2_FOLLOW@13.7 -> S3_ALIGN@25.8
+end of right move: x = 44 (marker 2 at x = 90), heading 2.6 deg
+stopped in front of marker 2: 154 cm (target 150)
+segment 2 distance to marker 0: min 68, max 172 cm

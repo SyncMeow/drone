@@ -1,13 +1,13 @@
 Battery: 80 %
-速度倍率: 平移 x1.30, 上下 x1.30, 旋轉 x1.10
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  MANUAL  ON GROUND  畫面 0.0 fps (處理 0.0 fps)
-還沒起飛: 自動起飛
-進入 S2_FOLLOW
+Speed scale: move x1.30, up/down x1.30, turn x1.10
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  MANUAL  ON GROUND  video 0.0 fps (processed 0.0 fps)
+not flying: taking off
+start S2_FOLLOW
 [1000.2] MANUAL -> S2_FOLLOW
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S2_FOLLOW  FLYING  畫面 16.7 fps (處理 16.6 fps)
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S2_FOLLOW  FLYING  畫面 16.7 fps (處理 16.7 fps)
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S2_FOLLOW  FLYING  畫面 16.7 fps (處理 16.7 fps)
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S2_FOLLOW  FLYING  video 16.7 fps (processed 16.6 fps)
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S2_FOLLOW  FLYING  video 16.7 fps (processed 16.7 fps)
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S2_FOLLOW  FLYING  video 16.7 fps (processed 16.7 fps)
 LAND
-[HH:MM:SS] [結束] 這次最高溫度 ?, 最低電量 ?
+[HH:MM:SS] [end] max temperature ?, min battery ?
 
-人走 35 cm/s: marker 0 在畫面裡 100% 的時間, 偏離畫面中心最大 15 度 (中位數 14)
+walker 35 cm/s: marker 0 in frame 100% of the time, max offset from centre 15 deg (median 14)

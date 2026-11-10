@@ -1,15 +1,15 @@
 Battery: 80 %
-速度倍率: 平移 x1.30, 上下 x1.30, 旋轉 x1.10
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  MANUAL  ON GROUND  畫面 0.0 fps (處理 0.0 fps)
-還沒起飛: 自動起飛
-進入 S5_ALIGN
+Speed scale: move x1.30, up/down x1.30, turn x1.10
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  MANUAL  ON GROUND  video 0.0 fps (processed 0.0 fps)
+not flying: taking off
+start S5_ALIGN
 [1000.4] MANUAL -> S5_ALIGN
-  暫時沒抓到 marker 5 (在畫面中間), 原地等
-  看不到 marker 5, 懸停等待
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S5_ALIGN  FLYING  畫面 16.7 fps (處理 16.6 fps)
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S5_ALIGN  FLYING  畫面 16.7 fps (處理 16.7 fps)
+  marker 5 missed (was mid-frame), waiting in place
+  marker 5 not visible, hovering
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S5_ALIGN  FLYING  video 16.7 fps (processed 16.6 fps)
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S5_ALIGN  FLYING  video 16.7 fps (processed 16.7 fps)
 LAND
-[HH:MM:SS] [結束] 這次最高溫度 ?, 最低電量 ?
+[HH:MM:SS] [end] max temperature ?, min battery ?
 
-狀態: S5_ALIGN@0.4
-降落點: 離牆 169 cm (目標 165), 和 marker 5 左右差 -2 cm
+states: S5_ALIGN@0.4
+landing point: 169 cm from wall (target 165), -2 cm sideways from marker 5

@@ -18,21 +18,21 @@ class Segments(object):
         """第一段: marker 1, 2 -> 左移找 marker 0"""
         if st == S1_APPROACH:
             if el > P.APPROACH_MAX_TIME:
-                print("  接近 marker 1 超過 %.0f 秒, 直接右移" % P.APPROACH_MAX_TIME)
+                print("  approaching marker 1 took over %.0f s, moving right now" % P.APPROACH_MAX_TIME)
                 self.enter(S1_PAUSE1, now)
                 return (0, 0, 0, 0)
             last = self.last
             p = self.track(markers, P.M1_ID, now)
             if p is None:
                 if last is not None and last[2] <= P.APPROACH_DIST + P.NEAR_LOST_EXTRA:
-                    print("  靠太近看不到 marker 1 (最後 %.0f cm), 視為抵達" % last[2])
+                    print("  marker 1 lost up close (last %.0f cm), treating as arrived" % last[2])
                     self.enter(S1_PAUSE1, now)
                 else:
-                    self.note("lost1", "看不到 marker 1, 懸停等待")
+                    self.note("lost1", "marker 1 not visible, hovering")
                 return (0, 0, 0, self.heading_cmd())
             x, y, z, _ = p
             if self.arrived(z <= P.APPROACH_DIST + P.FB_DEAD):
-                print("  到達 marker 1 前 %.0f cm" % z)
+                print("  reached marker 1 at %.0f cm" % z)
                 self.enter(S1_PAUSE1, now)
                 return (0, 0, 0, 0)
             fb = self.fwd(z - P.APPROACH_DIST)
@@ -45,15 +45,15 @@ class Segments(object):
             done = False
             if P.SIDE_MODE == "marker2":
                 if p is not None:
-                    self.note("see2", "右移中看到 marker 2, x = %.0f cm" % p[0])
+                    self.note("see2", "marker 2 seen while moving right, x = %.0f cm" % p[0])
                     done = el >= P.SIDE_MIN_TIME and p[0] <= P.SIDE_ALIGN_CM
                 elif el >= P.SIDE_TIME and "see2" not in self.notes:
-                    print("  右移 %.1f 秒沒看到 marker 2, 依時間停止" % P.SIDE_TIME)
+                    print("  no marker 2 after moving right %.1f s, stopping by time" % P.SIDE_TIME)
                     done = True
             else:
                 done = el >= P.SIDE_TIME
             if el >= P.SIDE_MAX_TIME:
-                print("  右移達上限 %.1f 秒" % P.SIDE_MAX_TIME)
+                print("  right move hit the %.1f s limit" % P.SIDE_MAX_TIME)
                 done = True
             if done:
                 self.enter(S1_PAUSE2, now)
@@ -64,13 +64,13 @@ class Segments(object):
             p = self.track(markers, P.M2_ID, now)
             if p is None:
                 if el >= P.FWD_MAX_TIME:
-                    self.note("nofind2", "往前 %.0f 秒仍沒看到 marker 2, 懸停 (可手動調整後再按 g)" % P.FWD_MAX_TIME)
+                    self.note("nofind2", "no marker 2 after flying forward %.0f s, hovering (adjust manually, then press g)" % P.FWD_MAX_TIME)
                     return (0, 0, 0, self.heading_cmd())
                 return (0, P.FWD_SPEED, 0, self.heading_cmd())
             x, y, z, _ = p
             err = z - P.M2_STOP_DIST
             if self.arrived(abs(err) <= P.M2_TOL):
-                print("  到達 marker 2 前 %.0f cm" % z)
+                print("  reached marker 2 at %.0f cm" % z)
                 self.enter(S1_PAUSE3, now)
                 return (0, 0, 0, 0)
             # 死區 = 到位範圍, 否則會卡在 "不動但也還沒到位" 的距離
@@ -78,11 +78,11 @@ class Segments(object):
 
         if st == S1_LEFT:
             if el >= P.LEFT_MIN_TIME and self.arrived(P.M0_ID in markers):
-                print("  看到手持的 marker 0 (%.0f cm), 進入第二段" % markers[P.M0_ID]["d"])
+                print("  hand-held marker 0 seen (%.0f cm), starting segment 2" % markers[P.M0_ID]["d"])
                 self.enter(S2_FOLLOW, now)
                 return (0, 0, 0, 0)
             if el >= P.LEFT_MAX_TIME:
-                print("  左移 %.0f 秒仍沒看到 marker 0, 原地等待" % P.LEFT_MAX_TIME)
+                print("  no marker 0 after moving left %.0f s, waiting" % P.LEFT_MAX_TIME)
                 self.enter(S1_WAIT0, now)
                 return (0, 0, 0, 0)
             return (-P.LEFT_SPEED, 0, 0, self.heading_cmd())
@@ -103,7 +103,7 @@ class Segments(object):
                 self.m3_since = None
             if now < self.s2_hold_until:
                 # 第一段左移剛看到 marker 0: 先原地懸停一下 (把左移的速度停掉), 再開始跟
-                self.note("s2hold", "看到 marker 0, 先懸停 %.1f 秒再開始跟" % P.S2_START_HOLD)
+                self.note("s2hold", "marker 0 seen, hovering %.1f s before following" % P.S2_START_HOLD)
                 return (0, 0, 0, 0)
             if P.S2_AUTO_S3 and self.m0_ever and p is None:
                 if P.M3_ID in markers:
@@ -111,9 +111,9 @@ class Segments(object):
                     if self.m3_since is None:
                         self.m3_since = now
                         self.ema3.reset()
-                        print("  marker 0 不見了, 看到 marker 3: 對準 marker 3, %.1f 秒後進第三段" % P.S2_TO_S3_TIME)
+                        print("  marker 0 gone, marker 3 seen: aligning marker 3, segment 3 in %.1f s" % P.S2_TO_S3_TIME)
                     if now - self.m3_since >= P.S2_TO_S3_TIME:
-                        print("  看到 marker 3 %.1f 秒, 進第三段" % (now - self.m3_since))
+                        print("  marker 3 seen for %.1f s, starting segment 3" % (now - self.m3_since))
                         self.enter(S3_ALIGN, now)
                         return (0, 0, 0, 0)
                     m3 = markers[P.M3_ID]
@@ -159,27 +159,27 @@ class Segments(object):
                 if not self.m0_ever:
                     # 剛從第一段 (看到 m2 後左移) 進來, 這一段還沒看到過 marker 0: 不要自轉, 原地等它出現
                     self.last_yaw_cmd = 0
-                    self.note("wait0first", "還沒看到 marker 0, 原地等 (看到一次之後不見才會往左轉找)")
+                    self.note("wait0first", "marker 0 not seen yet, waiting (turns left to search only after it was seen once)")
                     return (0, 0, 0, 0)
                 if self.lost_since is not None and now - self.lost_since < P.FOLLOW_LOST_HOLD + P.FOLLOW_SEARCH_LEFT_MAX:
-                    self.note("search0", "找不到 marker 0, 往左轉找")
+                    self.note("search0", "marker 0 lost, turning left to search")
                     self.last_yaw_cmd = -P.FOLLOW_SEARCH_YAW
                     return (0, 0, 0, self.last_yaw_cmd)
                 self.last_yaw_cmd = 0
-                self.note("lost0", "往左轉 %.0f 秒還是找不到 marker 0, 懸停等待" % P.FOLLOW_SEARCH_LEFT_MAX)
+                self.note("lost0", "marker 0 not found after turning left %.0f s, hovering" % P.FOLLOW_SEARCH_LEFT_MAX)
                 return (0, 0, 0, 0)
             # (FOLLOW_SEARCH_DIR = "last") marker 0 剛跑出畫面: 往它最後出現的那一側轉一下找回來
             if self.last_bearing is not None and now - self.lost_since < P.FOLLOW_LOST_HOLD + P.FOLLOW_SEARCH_TIME:
                 side = getattr(self, "m0_side", 1 if self.last_bearing > 0 else -1)
                 if P.FOLLOW_LEAD:                            # (有開速度預測時才用)
                     side = 1 if self.last_bearing + P.FOLLOW_LEAD * self.bearing_rate > 0 else -1
-                self.note("search0", "marker 0 跑出畫面 (最後在畫面%s %.0f 度), 往%s轉找回來" % (
-                    "右" if side > 0 else "左", abs(getattr(self, "m0_side_bearing", self.last_bearing)),
-                    "右" if side > 0 else "左"))
+                self.note("search0", "marker 0 left the frame (last seen %s %.0f deg), turning %s to find it" % (
+                    "right" if side > 0 else "left", abs(getattr(self, "m0_side_bearing", self.last_bearing)),
+                    "right" if side > 0 else "left"))
                 self.last_yaw_cmd = P.FOLLOW_SEARCH_YAW * side
                 return (0, 0, 0, self.last_yaw_cmd)
             self.last_yaw_cmd = 0
-            self.note("lost0", "看不到 marker 0, 懸停等待")
+            self.note("lost0", "marker 0 not visible, hovering")
             return (0, 0, 0, 0)
         return (0, 0, 0, 0)
 
@@ -190,7 +190,7 @@ class Segments(object):
             if P.S3_BACK_TO_S2:
                 self.m0_back = self.m0_back + 1 if P.M0_ID in markers else 0
                 if self.m0_back >= P.S3_BACK_FRAMES:
-                    print("  對正 marker 3 時又看到 marker 0, 回到第二段跟隨 (marker 0 不見 + 看到 marker 3 %.1f 秒就會再進第三段)"
+                    print("  marker 0 seen again while aligning marker 3, back to segment 2 (marker 0 gone + marker 3 seen for %.1f s re-enters segment 3)"
                           % P.S2_TO_S3_TIME)
                     self.enter(S2_FOLLOW, now)
                     self.m0_ever = True                        # 剛剛有看到 marker 0
@@ -221,24 +221,24 @@ class Segments(object):
             ok = abs(p[2] - P.S3_DIST) <= P.S3_DIST_TOL and face_ok
             if now - getattr(self, "_s3_dbg", 0.0) >= 1.0:   # 每秒印一次, 看 log 才知道角度有沒有在收斂
                 self._s3_dbg = now
-                print("  [S3_ALIGN] x %+.0f  z %.0f  角度 %+.0f (平均 %+.1f)  rc %s  (左右積分 %+.0f)" % (p[0], p[2], p[3], ang3, rc, self.lat_i))
+                print("  [S3_ALIGN] x %+.0f  z %.0f  ang %+.0f (avg %+.1f)  rc %s  (lat integral %+.0f)" % (p[0], p[2], p[3], ang3, rc, self.lat_i))
             if not self.arrived(ok) and el > P.ALIGN_MAX_TIME:
                 if not face_ok:
                     # 還沒正對: 不可以往前 (會斜斜 / 偏一邊鑽過去), 距離先不管, 只修左右和角度;
                     # 再修 S3_YAW_EXTRA_TIME 秒還不行就懸停
                     if el > P.ALIGN_MAX_TIME + P.S3_YAW_EXTRA_TIME:
-                        self.note("s3yaw", "對正 marker 3 一直對不正 (左右 %+.0f cm, 角度 %+.0f), 懸停: 請手動對正後再按 j"
+                        self.note("s3yaw", "cannot align with marker 3 (lat %+.0f cm, ang %+.0f), hovering: align manually, then press j"
                                   % (p[0], p[3]))
                         return (0, 0, 0, 0)
-                    self.note("s3yawonly", "對正 marker 3 超過 %.0f 秒, 距離先不管, 只修左右和角度 (左右 %+.0f cm, 角度 %+.0f)"
+                    self.note("s3yawonly", "aligning marker 3 took over %.0f s, fixing only lateral + angle, ignoring distance (lat %+.0f cm, ang %+.0f)"
                               % (P.ALIGN_MAX_TIME, p[0], p[3]))
                     lr = p_ctrl(p[0], P.LAT_KP, P.LAT_DEAD, P.LAT_MAX, P.S3_LAT_MIN) + self.lat_i
                     return (limit(lr, P.LAT_MAX + P.S3_LAT_I_MAX), 0, 0, rc[3])
-                print("  對正 marker 3 超過 %.0f 秒, 已正對 (左右 %+.0f cm, 角度 %+.0f), 距離 %.0f cm 就從這裡繼續"
+                print("  aligning marker 3 took over %.0f s, facing it (lat %+.0f cm, ang %+.0f), continuing from %.0f cm"
                       % (P.ALIGN_MAX_TIME, p[0], p[3], p[2]))
                 ok = True
             if ok and (self.arrive >= P.ARRIVE_FRAMES or el > P.ALIGN_MAX_TIME):
-                print("  已正對 marker 3 (%.0f cm, 左右 %+.0f cm, 角度 %+.1f (平均)), 開始下降" % (p[2], p[0], ang3))
+                print("  facing marker 3 (%.0f cm, lat %+.0f cm, ang %+.1f avg), descending" % (p[2], p[0], ang3))
                 self.set_heading_ref()                     # 鑽桌子的方向 = 正對 marker 3 的方向
                 self.enter(S3_DOWN, now)
                 return (0, 0, 0, 0)
@@ -252,7 +252,7 @@ class Segments(object):
                 x, y, z, _ = p
                 clear = self.clear3(y, z)                  # marker 下緣比鏡頭高多少 (cm)
                 if self.arrived(clear >= P.S3_CLEAR and self.low_enough(alt)):
-                    print("  marker 3 下緣高於鏡頭 %.0f cm (高度 %s), 開始鑽桌子" %
+                    print("  marker 3 bottom edge %.0f cm above camera (height %s), going under the table" %
                           (clear, "%.0f cm" % alt if alt is not None else "?"))
                     self.s3_z0 = z
                     self.enter(S3_UNDER, now)
@@ -264,37 +264,37 @@ class Segments(object):
                 if last is not None and self.clear3(last[1], last[2]) >= 0:
                     if alt is not None and P.S3_PASS_ALT is not None:
                         if alt <= P.S3_PASS_ALT:             # 有 TOF: 降到 S3_PASS_ALT 以下才鑽
-                            print("  marker 3 已移出畫面上方, 高度 %.0f cm, 開始鑽桌子" % alt)
+                            print("  marker 3 left the top of the frame, height %.0f cm, going under the table" % alt)
                             self.s3_z0 = last[2]
                             self.enter(S3_UNDER, now)
                             return (0, 0, 0, 0)
                     elif now - self.lost_since >= P.S3_LOST_EXTRA:
-                        print("  marker 3 已移出畫面上方, 多降 %.1f 秒後開始鑽桌子" % P.S3_LOST_EXTRA)
+                        print("  marker 3 left the top of the frame, going under after %.1f s more descent" % P.S3_LOST_EXTRA)
                         self.s3_z0 = last[2]
                         self.enter(S3_UNDER, now)
                         return (0, 0, 0, 0)
                 else:
                     # 偶爾一兩張 frame 沒抓到 (晃動 / Wi-Fi): 不要停下來懸停 (實飛會一直停停走走直到超時),
                     # 只停止前後左右修正, 繼續往下; 最低高度 MIN_ALT 仍會擋住
-                    self.note("lost3d", "下降時暫時看不到 marker 3, 繼續往下")
+                    self.note("lost3d", "marker 3 briefly lost while descending, continuing down")
                 lr = fb = 0
             if alt is not None and alt <= P.MIN_ALT:
-                self.note("minalt", "已到最低高度 %.0f cm, marker 3 仍不夠高, 不往前鑽 (請手動處理)" % alt)
+                self.note("minalt", "at minimum height %.0f cm and marker 3 still not high enough, not going under (take over manually)" % alt)
                 return (0, 0, 0, self.heading_cmd())
             if el > P.S3_DOWN_MAX_TIME:
-                self.note("downmax", "下降超過 %.0f 秒仍不夠低, 懸停" % P.S3_DOWN_MAX_TIME)
+                self.note("downmax", "still not low enough after descending %.0f s, hovering" % P.S3_DOWN_MAX_TIME)
                 return (0, 0, 0, self.heading_cmd())
             return (lr, fb, -P.S3_DOWN_SPEED, self.heading_cmd())
 
         if st == S3_UNDER:
             if el >= self.under_time:
-                print("  已鑽過桌子")
+                print("  passed under the table")
                 self.enter(S3_PAUSE1, now)
                 return (0, 0, 0, 0)
             # 還看得到 marker 3 時再檢查一次: 下緣不夠高就先停下來往下 (絕不往前撞)
             p = self.track(markers, P.M3_ID, now)
             if p is not None and self.clear3(p[1], p[2]) < P.S3_CLEAR * 0.5:
-                self.note("lowclear", "鑽桌子時 marker 3 太低, 先停下來下降")
+                self.note("lowclear", "marker 3 too low while under the table, stopping to descend")
                 self.t0 += P.CONTROL_PERIOD                  # 這段時間不算在往前的秒數裡
                 return (0, 0, -P.S3_DOWN_SPEED, self.heading_cmd())
             ud = self.alt_hold(self.hold_alt)
@@ -306,7 +306,7 @@ class Segments(object):
         if st == S3_TURN:
             err = self.heading_err(self.turn_target)
             if err is None:                                # 讀不到 yaw: 用內建指令轉
-                print("  讀不到 yaw, 改用 rotate_clockwise(%d)" % P.S3_TURN_DEG)
+                print("  cannot read yaw, using rotate_clockwise(%d)" % P.S3_TURN_DEG)
                 try:
                     self.drone.rotate_clockwise(int(P.S3_TURN_DEG))
                 except Exception as e:
@@ -314,7 +314,7 @@ class Segments(object):
                 self.enter(S3_UP, now)
                 return (0, 0, 0, 0)
             if self.arrived(abs(err) <= P.TURN_TOL) or el > P.TURN_MAX_TIME:
-                print("  已轉 %.0f 度 (誤差 %.0f)" % (P.S3_TURN_DEG, err))
+                print("  turned %.0f deg (error %.0f)" % (P.S3_TURN_DEG, err))
                 self.set_heading_ref()
                 self.enter(S3_UP, now)
                 return (0, 0, 0, 0)
@@ -322,13 +322,13 @@ class Segments(object):
 
         if st == S3_UP:
             if self.arrived(P.M4_ID in markers):
-                print("  看到 marker 4")
+                print("  marker 4 seen")
                 self.enter(S3_ALIGN4, now)
                 return (0, 0, 0, 0)
             alt = read_tof(self.drone)
             high = P.S3_UP_ALT is not None and alt is not None and alt >= P.S3_UP_ALT
             if high or el >= P.S3_UP_MAX_TIME:
-                print("  往上到 %s 仍沒看到 marker 4, 往後退 + 左右找" % ("%.0f cm" % alt if alt is not None else "%.0f 秒" % el))
+                print("  climbed to %s without seeing marker 4, backing off + searching left/right" % ("%.0f cm" % alt if alt is not None else "%.0f s" % el))
                 self.enter(S3_FIND4, now)
                 return (0, 0, 0, 0)
             return (0, 0, P.S3_UP_SPEED, self.heading_cmd())
@@ -336,7 +336,7 @@ class Segments(object):
         if st == S3_FIND4:
             # 不靠鑽了多遠: 停在 marker 4 的高度, 先後退讓視野變寬, 再往左 / 往右平移找 marker 4
             if self.arrived(P.M4_ID in markers):
-                print("  找到 marker 4 (找了 %.1f 秒)" % el)
+                print("  marker 4 found (after %.1f s)" % el)
                 self.enter(S3_ALIGN4, now)
                 return (0, 0, 0, 0)
             ud = self.alt_hold(self.alt0)                  # 維持剛升到的高度
@@ -346,12 +346,12 @@ class Segments(object):
             if el < t1:
                 return (0, -P.S3_FIND4_SPEED, ud, self.heading_cmd())
             if el < t2:
-                self.note("find4l", "往左找 marker 4")
+                self.note("find4l", "searching left for marker 4")
                 return (-P.S3_FIND4_SPEED, 0, ud, self.heading_cmd())
             if el < t3:
-                self.note("find4r", "往右找 marker 4")
+                self.note("find4r", "searching right for marker 4")
                 return (P.S3_FIND4_SPEED, 0, ud, self.heading_cmd())
-            print("  左右都找不到 marker 4, 原地等待 (可手動移到看得到 marker 4 後按 k)")
+            print("  marker 4 not found left or right, waiting (move manually until it is visible, then press k)")
             self.enter(S3_WAIT4, now)
             return (0, 0, 0, 0)
 
@@ -360,7 +360,7 @@ class Segments(object):
             if p is None:                                  # 剛升上來時 marker 4 常只在畫面邊緣
                 if self.last is None and el > P.S4_FIND_M4_TIME:
                     # 按 k 進來但一直沒看到 marker 4: 照舊以目前方向進第四段
-                    print("  %.0f 秒沒看到 marker 4, 以目前方向進第四段" % P.S4_FIND_M4_TIME)
+                    print("  no marker 4 for %.0f s, starting segment 4 with the current heading" % P.S4_FIND_M4_TIME)
                     self.set_heading_ref()
                     self.enter(S4_CLIMB, now)
                     return (0, 0, 0, 0)
@@ -378,20 +378,20 @@ class Segments(object):
             ok = (abs(x) < P.S4A_LAT_TOL and abs(z - P.M4_DIST) <= P.S4A_DIST_TOL and abs(y) < P.S4A_UD_TOL and yaw_ok)
             if now - getattr(self, "_s4_dbg", 0.0) >= 1.0:
                 self._s4_dbg = now
-                print("  [S3_ALIGN4] x %+.0f  y %+.0f  z %.0f  角度 %+.0f  rc %s" % (p[0], p[1], p[2], p[3], rc))
+                print("  [S3_ALIGN4] x %+.0f  y %+.0f  z %.0f  ang %+.0f  rc %s" % (p[0], p[1], p[2], p[3], rc))
             if not self.arrived(ok) and el > P.ALIGN_MAX_TIME:
                 if not yaw_ok:
                     # 沒正對 marker 4 就往左, 第四段會斜著飛, 第五段降落就不準: 先只轉正
                     if el > P.ALIGN_MAX_TIME + P.S3_YAW_EXTRA_TIME:
-                        self.note("s4yaw", "對正 marker 4 一直轉不正 (角度 %+.0f), 懸停: 請手動轉正後再按 k" % p[3])
+                        self.note("s4yaw", "cannot square up to marker 4 (ang %+.0f), hovering: turn manually, then press k" % p[3])
                         return (0, 0, 0, 0)
-                    self.note("s4yawonly", "對正 marker 4 超過 %.0f 秒, 位置先不管, 只把角度轉正 (現在 %+.0f 度)"
+                    self.note("s4yawonly", "aligning marker 4 took over %.0f s, fixing only the angle (now %+.0f deg)"
                               % (P.ALIGN_MAX_TIME, p[3]))
                     return (rc[0], 0, rc[2], rc[3])
                 ok = True
             if ok and (self.arrive >= P.ARRIVE_FRAMES or el > P.ALIGN_MAX_TIME):
-                print("  第三段完成: 已對正 marker 4 (%.0f cm, 角度 %+.0f)%s" %
-                      (p[2], p[3], "" if self.arrive >= P.ARRIVE_FRAMES else " (超時, 角度已正, 以目前位置繼續)"))
+                print("  segment 3 done: aligned with marker 4 (%.0f cm, ang %+.0f)%s" %
+                      (p[2], p[3], "" if self.arrive >= P.ARRIVE_FRAMES else " (timeout, angle ok, continuing from here)"))
                 self.set_heading_ref()                     # 沿牆平移的方向 = 正對 marker 4 的方向
                 self.enter(S4_CLIMB, now)
                 return (0, 0, 0, 0)
@@ -408,7 +408,7 @@ class Segments(object):
             alt = read_alt(self.drone)
             climbed = None if (alt is None or self.alt0 is None) else alt - self.alt0
             if (climbed is not None and climbed >= P.S4_CLIMB_CM) or el >= P.S4_CLIMB_MAX_TIME:
-                print("  爬升完成 (%s)" % ("+%.0f cm" % climbed if climbed is not None else "依時間"))
+                print("  climb done (%s)" % ("+%.0f cm" % climbed if climbed is not None else "by time"))
                 base = self.alt0
                 self.enter(S4_LEFT, now)
                 self.alt_left = self.alt0                  # 向左時要維持的高度 (爬升後)
@@ -418,11 +418,11 @@ class Segments(object):
 
         if st == S4_LEFT:
             if self.arrived(P.M5_ID in markers):
-                print("  第四段完成: 看到 marker 5")
+                print("  segment 4 done: marker 5 seen")
                 self.enter(S5_ALIGN, now)
                 return (0, 0, 0, 0)
             if el >= P.S4_MAX_TIME:
-                print("  向左 %.0f 秒仍沒看到 marker 5, 原地等待" % P.S4_MAX_TIME)
+                print("  no marker 5 after moving left %.0f s, waiting" % P.S4_MAX_TIME)
                 self.enter(S4_WAIT5, now)
                 return (0, 0, 0, 0)
             if P.S4_CLIMB_CM > 0 and P.S4_DESCEND_AFTER and el >= P.S4_CROSS_TIME:
@@ -440,7 +440,7 @@ class Segments(object):
             tof = read_tof(self.drone)
             if p is None:
                 if self.lost_since is not None and now - self.lost_since > P.S5_TABLE_LOST:
-                    print("  找桌子時 %.0f 秒看不到 marker 5, 直接降落" % P.S5_TABLE_LOST)
+                    print("  marker 5 not visible for %.0f s while finding the table, landing" % P.S5_TABLE_LOST)
                     self.enter(FINISHED, now)
                 return (0, 0, 0, 0)
             moved = self.tbl_x0 - p[0]                     # 無人機往右移了多少 (cm): 往右 -> marker 在畫面往左
@@ -449,18 +449,18 @@ class Segments(object):
             self.tbl_on = self.tbl_on + 1 if on else 0
             if now - getattr(self, "_s5t_dbg", 0.0) >= 1.0:
                 self._s5t_dbg = now
-                print("  [S5_TABLE] 移了 %+.0f cm  tof %s  地板 %s  %s" % (moved, "%.0f" % tof if tof is not None else "?",
-                      "%.0f" % self.tof_floor if self.tof_floor is not None else "?", "桌子" if on else "地板"))
+                print("  [S5_TABLE] moved %+.0f cm  tof %s  floor %s  %s" % (moved, "%.0f" % tof if tof is not None else "?",
+                      "%.0f" % self.tof_floor if self.tof_floor is not None else "?", "table" if on else "floor"))
             if self.tbl_found is None:
                 if self.tbl_on >= 3:
                     if not getattr(self, "tbl_scanned", False):
-                        print("  下面就是桌子 (tof %.0f, 地板 %.0f), 降落" % (tof, self.tof_floor))
+                        print("  table below (tof %.0f, floor %.0f), landing" % (tof, self.tof_floor))
                         self.enter(FINISHED, now)
                         return (0, 0, 0, 0)
                     self.tbl_found = moved
-                    print("  找到桌子邊緣 (往%s %.0f cm), 再往裡面 %.0f cm" % ("右" if moved > 0 else "左", abs(moved), P.S5_TABLE_IN_CM))
+                    print("  table edge found (%s %.0f cm), moving %.0f cm further in" % ("right" if moved > 0 else "left", abs(moved), P.S5_TABLE_IN_CM))
                 elif self.tof_floor is None or tof is None:
-                    print("  讀不到 TOF, 無法確認桌子, 直接降落")
+                    print("  cannot read TOF to confirm the table, landing")
                     self.enter(FINISHED, now)
                     return (0, 0, 0, 0)
                 elif self.tbl_on > 0:
@@ -469,14 +469,14 @@ class Segments(object):
                     if self.tbl_dir * moved >= P.S5_SCAN_CM:
                         if self.tbl_dir == P.S5_SCAN_FIRST:
                             self.tbl_dir = -self.tbl_dir
-                            print("  往%s %.0f cm 沒找到桌子, 換邊找" % ("右" if moved > 0 else "左", P.S5_SCAN_CM))
+                            print("  moved %s %.0f cm without finding the table, trying the other side" % ("right" if moved > 0 else "left", P.S5_SCAN_CM))
                         else:
-                            print("  左右都沒找到桌子 (TOF 沒有變小), 回到對準 marker 5 的位置降落")
+                            print("  no table found on either side (TOF never dropped), landing back at the marker 5 spot")
                             self.tbl_found = 0.0
                             self.tbl_dir = 0
                     self.tbl_scanned = True
-                    self.note("s5scan", "下面不是桌子 (tof %s, 地板 %.0f), 往%s找桌子" % (
-                        "%.0f" % tof, self.tof_floor, "右" if self.tbl_dir > 0 else "左"))
+                    self.note("s5scan", "no table below (tof %s, floor %.0f), scanning %s" % (
+                        "%.0f" % tof, self.tof_floor, "right" if self.tbl_dir > 0 else "left"))
                     return (self.tbl_dir * P.S5_SCAN_SPEED, fb, 0, 0)
             target = self.tbl_found + self.tbl_dir * P.S5_TABLE_IN_CM
             err = target - moved
@@ -484,7 +484,7 @@ class Segments(object):
                 if self.tbl_ok_t is None:
                     self.tbl_ok_t = now
                 if now - self.tbl_ok_t >= P.S5_SETTLE:
-                    print("  在桌子上方 (tof %s), 降落" % ("%.0f" % tof if tof is not None else "?"))
+                    print("  above the table (tof %s), landing" % ("%.0f" % tof if tof is not None else "?"))
                     self.enter(FINISHED, now)
                 return (0, 0, 0, 0)
             self.tbl_ok_t = None
@@ -512,21 +512,21 @@ class Segments(object):
                 ok = abs(ex) < P.S5_LAT_TOL and abs(zz - P.M5_DIST) <= P.M5_TOL
                 self.s5_n = self.s5_n + 1 if ok else 0
                 if self.s5_n >= P.S5_ARRIVE_FRAMES:
-                    print("  連續 %d 張 marker 5 在中心 (離 %.0f cm, 左右偏 %+.0f cm, 角度 %+.1f), 降落"
+                    print("  marker 5 centred for %d frames (%.0f cm, lat %+.0f cm, ang %+.1f), landing"
                           % (self.s5_n, zz, p[0], ang5))
                     self.enter(FINISHED, now)
                     return (0, 0, 0, 0)
                 return (lr, fb, 0, yaw)
             # 剛看到 marker 5 時還帶著第四段向左的速度: 先只煞車懸停 S5_SETTLE 秒, 不要邊滑邊對
             if el < P.S5_SETTLE:
-                self.note("s5settle", "看到 marker 5, 先煞車懸停 %.1f 秒" % P.S5_SETTLE)
+                self.note("s5settle", "marker 5 seen, braking and hovering %.1f s" % P.S5_SETTLE)
                 return (0, 0, 0, 0)
             lr = p_ctrl(ex, P.S5_LAT_KP, P.S5_LAT_DEAD, P.S5_LAT_MAX, P.S5_LAT_MIN)
             fb = self.fwd(zz - P.M5_DIST, dead=P.M5_TOL)
             if P.ALIGN_YAW and abs(ang5) >= P.S5_YAW_TOL:
                 # 先轉正再對左右: 邊轉邊對, 每轉一點畫面裡的左右就跳, 會一直左右來回
                 self.s5_hist = []
-                self.note("s5yaw", "先轉正 (角度 %+.1f)" % ang5)
+                self.note("s5yaw", "turning square first (ang %+.1f)" % ang5)
                 return (0, fb, 0, yaw)
             if abs(ex) < P.S5_LAT_AIM:
                 lr = 0                                     # 已經夠準: 不要再推 (最小速度會推過頭), 讓它停下來
@@ -543,8 +543,8 @@ class Segments(object):
                 zs = [h[2] for h in self.s5_hist]
                 still = max(xs) - min(xs) <= P.S5_STILL_CM and max(zs) - min(zs) <= 2 * P.S5_STILL_CM
                 if span >= P.S5_STILL_TIME * 0.9 and still:
-                    print("  對準 marker 5 且停穩 (離 marker 5 %.0f cm, 左右偏 %+.0f cm, 角度 %+.1f (平均))%s" %
-                          (zz, p[0], ang5, "" if ok else " (超時, 大致到位)"))
+                    print("  aligned with marker 5 and steady (%.0f cm, lat %+.0f cm, ang %+.1f avg)%s" %
+                          (zz, p[0], ang5, "" if ok else " (timeout, roughly in place)"))
                     if P.S5_TABLE_CHECK:
                         self.tbl_x0, self.tbl_dir, self.tbl_found, self.tbl_on, self.tbl_ok_t = p[0], P.S5_SCAN_FIRST, None, 0, None
                         self.tbl_scanned = False

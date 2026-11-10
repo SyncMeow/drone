@@ -21,20 +21,20 @@ W.SCENE[4] = lambda t: (WALL_X, 300.0, "wall", 120.0, 90.0)
 W.SCENE[5] = lambda t: (WALL_X, 550.0, "wall", 120.0, 90.0)
 
 d = W.run(lambda i: ord('j') if i == 5 else -1, max_iter=1400, start=(15.0, 0.0))
-print("\n狀態:", W.states_line())
+print("\nstates:", W.states_line())
 prev = None
 for (tt, P, psi, c, H) in d.trace:
     if prev is not None and prev[1] < M3_Z <= P[1]:
         bottom = M3_H - 7.5
-        print("穿過 marker 3 時: 高度 %.0f cm, marker 3 下緣 %.0f cm -> 間隙 %.0f cm" % (H, bottom, bottom - H))
+        print("passing marker 3: height %.0f cm, marker 3 bottom edge %.0f cm -> clearance %.0f cm" % (H, bottom, bottom - H))
     prev = P
 under = [H for (tt, P, psi, c, H) in d.trace if M3_Z <= P[1] <= M3_Z + TABLE_DEPTH]
 if under:
-    print("在桌子底下的最高高度: %.0f cm" % max(under))
+    print("max height under the table: %.0f cm" % max(under))
 a, b = W.STATE_T.get("S4_LEFT"), W.STATE_T.get("S5_ALIGN", 1e9)
 hs = [H for (tt, P, psi, c, H) in d.trace if a is not None and a <= tt < b]
 if hs:
-    print("第四段向左時的高度: %.0f ~ %.0f cm (marker 4/5 在 120)" % (min(hs), max(hs)))
+    print("height while moving left in segment 4: %.0f ~ %.0f cm (marker 4/5 at 120)" % (min(hs), max(hs)))
 P = d.trace[-1][1]
-print("降落點: 離牆 %.0f cm (目標 %.0f), 和 marker 5 左右差 %.0f cm" %
+print("landing point: %.0f cm from wall (target %.0f), %.0f cm sideways from marker 5" %
       (WALL_X - P[0], W.P.M5_DIST, P[1] - 550.0))

@@ -1,44 +1,50 @@
 """
-main.py - 期中賽道 (EAB06): 第一段 ~ 第五段
+main.py - midterm course (EAB06), segments 1 to 5. Entry point: python main.py
+(logic lives in core/, flight parameters in config/params.json)
 
-第一段 (marker 1, 2)
-    S1_APPROACH : 面向 marker 1 前進, 停在 APPROACH_DIST (不撞到 marker 1)
-    S1_RIGHT    : 向右平移避開板子; 移到 marker 2 正前方 (marker 2 的 x ~ 0) 就停
-    S1_FORWARD  : 往前, 停在 marker 2 前 M2_STOP_DIST (太近會往後退)
-    S1_LEFT     : 向左平移, 直到看到手持的 marker 0
-第二段 (marker 0)
-    S2_FOLLOW   : 跟著手持的 marker 0 (轉向 + 左右平移讓它保持在畫面中心, 並保持距離), 繞椅子飛過藍線;
-                  會估計 marker 0 移動的方向, 提前往它要去的方向轉;
-                  看過 marker 0 之後, marker 0 不在畫面但 marker 3 在 (對準 marker 3) 持續 S2_TO_S3_TIME 秒 -> 自動切到第三段;
-                  也可以隨時按 j 切到第三段 (S3_ALIGN); S3_ALIGN 時 marker 0 又出現會回到 S2_FOLLOW
-第三段 (marker 3, 4)
-    S3_ALIGN    : 正對 marker 3, 停在 S3_DIST
-    S3_DOWN     : 下降, 直到 marker 3 的下緣比鏡頭高 S3_CLEAR 以上 (保證從 marker 3 下面過, 不會撞到)
-    S3_UNDER    : 保持低高度往前鑽過桌子 (S3_UNDER_TIME 秒)
-    S3_TURN     : 原地順時針轉 S3_TURN_DEG 度
-    S3_UP       : 往上升直到看到 marker 4, 或 TOF 到 S3_UP_ALT (marker 4 的高度)
-    S3_FIND4    : 到高度還沒看到 marker 4: 往後退一點, 再往左 / 往右平移找 (不靠鑽了多遠)
-    S3_ALIGN4   : 對正 marker 4 (左右 / 高度 / 距離 / 角度)
-第四段 (marker 5)
-    S4_LEFT     : 以對正 marker 4 時的高度 (板子比 marker 低, marker 4 / 5 同高) 一直向左平移,
-                  維持高度越過板子, 看到 marker 5 就停 (S4_CLIMB_CM > 0 時會先多爬升一段)
-第五段
-    S5_ALIGN    : 對準 marker 5, 停在離牆 M5_DIST (桌子正上方)
-    => 降落在桌上
+Segment 1 (markers 1, 2)
+    S1_APPROACH : fly toward marker 1, stop at APPROACH_DIST (never hit marker 1)
+    S1_RIGHT    : slide right past the board; stop when straight in front of marker 2 (its x ~ 0)
+    S1_FORWARD  : fly forward, stop M2_STOP_DIST before marker 2 (backs off if too close)
+    S1_LEFT     : slide left until the hand-held marker 0 is seen
+Segment 2 (marker 0)
+    S2_FOLLOW   : follow the hand-held marker 0 (turn + slide to keep it centred, keep distance),
+                  around the chair and over the blue line; if marker 0 is lost, keep turning left to find it
+                  (FOLLOW_SEARCH_DIR); once marker 0 has been seen, "marker 0 gone + marker 3 in view"
+                  for S2_TO_S3_TIME s (aligning with marker 3 meanwhile) switches to segment 3 automatically;
+                  j switches at any time; seeing marker 0 again in S3_ALIGN returns to S2_FOLLOW
+Segment 3 (markers 3, 4)
+    S3_ALIGN    : face marker 3 squarely, stop at S3_DIST
+    S3_DOWN     : descend until marker 3's bottom edge is at least S3_CLEAR above the camera
+                  (guarantees passing under marker 3 without hitting it)
+    S3_UNDER    : fly forward under the table at low height (distance based on marker 3, or S3_UNDER_TIME s)
+    S3_TURN     : turn clockwise S3_TURN_DEG in place
+    S3_UP       : climb until marker 4 is seen or TOF reaches S3_UP_ALT (marker 4 height)
+    S3_FIND4    : at height but no marker 4: back off a little, then search left / right
+    S3_ALIGN4   : align with marker 4 (lateral / height / distance / angle)
+Segment 4 (marker 5)
+    S4_LEFT     : keep the marker 4 height (the board is lower, markers 4 / 5 are at the same height)
+                  and slide left over the board until marker 5 is seen (climbs S4_CLIMB_CM first if > 0)
+Segment 5
+    S5_ALIGN    : align with marker 5, stop M5_DIST from the wall (above the table)
+    => land on the table
 
-每個狀態只看自己的目標 marker id, 同時看到多個 marker 時其他的會被忽略。
-左右 / 上下 / 前後都用 marker 的公分位置 (solvePnP), 先平滑 (EMA) 再小增益修正, 不會左右快速來回甩。
+Each state only looks at its own target marker id; other markers in view are ignored.
+Lateral / vertical / forward control uses the marker position in cm (solvePnP), smoothed (EMA)
+and corrected with small gains, so the drone does not swing left and right.
 
-按鍵 (視窗 "drone" 要在最上層, 輸入法要切成英文)
-    g h j k l  從手動直接進入第 1 / 2 / 3 / 4 / 5 段 (還沒起飛時會先自動起飛)
-    計時: 按 g 開始, 畫面右上顯示; 降落時 (或程式結束時) 在終端機印出總時間與各段時間 / 佔比
-        g: 第一段開頭 (接近 marker 1)     h: 第二段 (跟著 marker 0, 按 j 切第三段)
-        j: 第三段開頭 (對正 marker 3)     k: 第四段開頭 (先對正 marker 4; 2 秒沒看到就以目前方向為牆的方向)
-        l: 第五段 (對準 marker 5 後降落)
-    1 起飛 / 2 降落 / 3 停止
-    w s a d z x c v 手動移動 (放開約 KEY_HOLD 秒後自動停止); 5 高度 / 6 電量
-    自動飛行中按任何操作鍵 (w s a d x z c v 1 2 3) => 立刻切回手動, 要再按 g~l 才會回到自動
-    q / ESC 結束 (停止並降落); Ctrl+C 也會降落
+Keys (the "drone" window must have focus, keyboard input method set to English)
+    g h j k l  start segment 1 / 2 / 3 / 4 / 5 from manual (takes off first if on the ground)
+    timer: starts on g, shown top-right; total and per-segment times are printed on landing (or exit)
+        g: segment 1 start (approach marker 1)   h: segment 2 (follow marker 0, j switches to segment 3)
+        j: segment 3 start (align marker 3)       k: segment 4 start (align marker 4 first; if not seen
+                                                     within 2 s, the current heading is taken as the wall)
+        l: segment 5 (align marker 5, then land)
+    1 take off / 2 land / 3 stop
+    w s a d z x c v  manual moves (stop about KEY_HOLD s after release); 5 height / 6 battery
+    any operation key (w s a d x z c v 1 2 3) during autonomous flight => back to manual immediately;
+        press g..l to resume
+    q / ESC quit (stop and land); Ctrl+C also lands
 """
 import os
 import sys

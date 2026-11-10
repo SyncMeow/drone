@@ -1,25 +1,25 @@
 Battery: 80 %
-速度倍率: 平移 x1.30, 上下 x1.30, 旋轉 x1.10
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  MANUAL  ON GROUND  畫面 0.0 fps (處理 0.0 fps)
-還沒起飛: 自動起飛
-進入 S3_ALIGN
+Speed scale: move x1.30, up/down x1.30, turn x1.10
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  MANUAL  ON GROUND  video 0.0 fps (processed 0.0 fps)
+not flying: taking off
+start S3_ALIGN
 [1000.4] MANUAL -> S3_ALIGN
-  [S3_ALIGN] x -15  z 172  角度 -6 (平均 -6.0)  rc (0, 10, 0, 8)  (左右積分 +0)
-  [S3_ALIGN] x -30  z 158  角度 -0 (平均 -0.6)  rc (-17, 0, 0, 0)  (左右積分 -7)
-  [S3_ALIGN] x -8  z 157  角度 +1 (平均 +0.5)  rc (-15, 0, 0, 0)  (左右積分 -12)
-  已正對 marker 3 (157 cm, 左右 -5 cm, 角度 +0.7 (平均)), 開始下降
+  [S3_ALIGN] x -15  z 172  ang -6 (avg -6.0)  rc (0, 10, 0, 8)  (lat integral +0)
+  [S3_ALIGN] x -30  z 158  ang -0 (avg -0.6)  rc (-17, 0, 0, 0)  (lat integral -7)
+  [S3_ALIGN] x -8  z 157  ang +1 (avg +0.5)  rc (-15, 0, 0, 0)  (lat integral -12)
+  facing marker 3 (157 cm, lat -5 cm, ang +0.7 avg), descending
 [1002.6] S3_ALIGN -> S3_DOWN
-  已到最低高度 28 cm, marker 3 仍不夠高, 不往前鑽 (請手動處理)
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S3_DOWN  FLYING  畫面 16.7 fps (處理 16.6 fps)
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S3_DOWN  FLYING  畫面 16.7 fps (處理 16.7 fps)
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S3_DOWN  FLYING  畫面 16.7 fps (處理 16.7 fps)
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S3_DOWN  FLYING  畫面 16.7 fps (處理 16.7 fps)
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S3_DOWN  FLYING  畫面 16.7 fps (處理 16.7 fps)
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S3_DOWN  FLYING  畫面 16.7 fps (處理 16.7 fps)
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S3_DOWN  FLYING  畫面 16.7 fps (處理 16.7 fps)
-[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S3_DOWN  FLYING  畫面 16.7 fps (處理 16.7 fps)
+  at minimum height 28 cm and marker 3 still not high enough, not going under (take over manually)
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S3_DOWN  FLYING  video 16.7 fps (processed 16.6 fps)
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S3_DOWN  FLYING  video 16.7 fps (processed 16.7 fps)
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S3_DOWN  FLYING  video 16.7 fps (processed 16.7 fps)
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S3_DOWN  FLYING  video 16.7 fps (processed 16.7 fps)
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S3_DOWN  FLYING  video 16.7 fps (processed 16.7 fps)
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S3_DOWN  FLYING  video 16.7 fps (processed 16.7 fps)
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S3_DOWN  FLYING  video 16.7 fps (processed 16.7 fps)
+[HH:MM:SS] [status] battery ?%  temp ?  height h=? tof=?  S3_DOWN  FLYING  video 16.7 fps (processed 16.7 fps)
 LAND
-[HH:MM:SS] [結束] 這次最高溫度 ?, 最低電量 ?
+[HH:MM:SS] [end] max temperature ?, min battery ?
 
-狀態: S3_ALIGN@0.4 -> S3_DOWN@2.6
-降落點: 離牆 210 cm (目標 165), 和 marker 5 左右差 -534 cm
+states: S3_ALIGN@0.4 -> S3_DOWN@2.6
+landing point: 210 cm from wall (target 165), -534 cm sideways from marker 5

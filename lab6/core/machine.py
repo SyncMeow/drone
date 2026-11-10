@@ -88,9 +88,9 @@ class Course(Segments):
             z0 = getattr(self, "s3_z0", None)
             if z0 is not None and v > 0:
                 self.under_time = (z0 + P.S3_PAST_CM) / v
-                print("  離 marker 3 %.0f cm, 往前飛 %.0f cm (%.1f 秒)" % (z0, z0 + P.S3_PAST_CM, self.under_time))
+                print("  %.0f cm from marker 3, flying forward %.0f cm (%.1f s)" % (z0, z0 + P.S3_PAST_CM, self.under_time))
             else:
-                print("  不知道離 marker 3 多遠, 依時間往前 %.1f 秒" % self.under_time)
+                print("  distance to marker 3 unknown, flying forward for %.1f s" % self.under_time)
         self.s3_z0 = None
         if state == S3_TURN:
             yaw = read_yaw(self.drone)
@@ -110,7 +110,7 @@ class Course(Segments):
                 self.report_time(now)
         self.s2_hold_until = now + P.S2_START_HOLD if (state == S2_FOLLOW and prev in (S1_LEFT, S1_WAIT0)) else 0.0
         if state == FINISHED:
-            print("全部完成, 降落")
+            print("course finished, landing")
             self.want_land = True
 
     def elapsed(self, now):
@@ -127,16 +127,16 @@ class Course(Segments):
             return
         total = self.elapsed(now)
         marks = [("g", self.run_t0)] + [(k, self.splits.get(k)) for k in SPLIT_STATES] + \
-                [("降落", self.splits.get(FINISHED))]
-        names = ["第1段 g -> S2_FOLLOW", "第2段 S2_FOLLOW -> S3_ALIGN", "第3段 S3_ALIGN -> S4",
-                 "第4段 S4 -> S5_ALIGN", "第5段 S5_ALIGN -> 降落"]
-        log("[計時] 總時間 %.1f 秒%s" % (total, "" if FINISHED in self.splits else " (還沒完成)"))
+                [("land", self.splits.get(FINISHED))]
+        names = ["seg 1  g -> S2_FOLLOW", "seg 2  S2_FOLLOW -> S3_ALIGN", "seg 3  S3_ALIGN -> S4",
+                 "seg 4  S4 -> S5_ALIGN", "seg 5  S5_ALIGN -> land"]
+        log("[timer] total %.1f s%s" % (total, "" if FINISHED in self.splits else " (not finished)"))
         for i, name in enumerate(names):
             a, b = marks[i][1], marks[i + 1][1]
             if a is None or b is None:
-                log("[計時]   %-28s   -" % name)
+                log("[timer]   %-28s   -" % name)
             else:
-                log("[計時]   %-28s %6.1f 秒  %5.1f%%" % (name, b - a, 100.0 * (b - a) / max(total, 1e-6)))
+                log("[timer]   %-28s %6.1f s  %5.1f%%" % (name, b - a, 100.0 * (b - a) / max(total, 1e-6)))
 
     def note(self, key, msg):
         if key not in self.notes:
@@ -147,22 +147,22 @@ class Course(Segments):
         self.heading_ref = read_yaw(self.drone)
         self.heading_ok = self.heading_ref is not None
         if not self.heading_ok:
-            print("  (讀不到 yaw, 不做航向保持)")
+            print("  (cannot read yaw, heading hold off)")
 
     def begin(self, state, now):
         """從手動直接進入某一段 (g h j k l)"""
-        print("進入 %s" % state)
+        print("start %s" % state)
         if state == S1_APPROACH:                           # 按 g: 從這裡開始計時
             self.run_t0 = now
             self.splits = {}
             self.timer_done = False
-            log("[計時] 開始")
+            log("[timer] start")
         self.set_heading_ref()                             # 直線段的方向 = 按下按鍵時的方向
         self.enter(state, now)
 
     def abort(self, now, why):
         if self.state != MANUAL:
-            print("[%.1f] 切回手動 (%s)" % (now, why))
+            print("[%.1f] back to manual (%s)" % (now, why))
         self.state = MANUAL
 
     # ---------------- 量測 ----------------
@@ -195,7 +195,7 @@ class Course(Segments):
         if err is None:
             return 0
         if abs(err) > P.HEADING_ABORT:
-            print("  航向偏離 %.0f 度, 停止航向修正 (檢查 HEADING_SIGN)" % err)
+            print("  heading off by %.0f deg, heading hold stopped (check HEADING_SIGN)" % err)
             self.heading_ok = False
             return 0
         cmd = p_ctrl(-P.HEADING_SIGN * err, P.HEADING_KP, P.HEADING_DEAD, P.HEADING_MAX, P.HEADING_MIN)
@@ -242,7 +242,7 @@ class Course(Segments):
     def seek(self, mid, now):
         """對正中的 marker 跑出畫面: 依最後看到的位置往那個方向慢慢移動找回來; 沒有資料或超時就懸停"""
         if self.last is None or now - self.lost_since > P.SEEK_TIME:
-            self.note("lost%d" % mid, "看不到 marker %d, 懸停等待" % mid)
+            self.note("lost%d" % mid, "marker %d not visible, hovering" % mid)
             return (0, 0, 0, 0)
         x, y, z = self.last[0], self.last[1], max(self.last[2], 1.0)
         # 只有 marker 消失前靠近畫面邊緣才往那邊找; 在畫面中間消失 = 只是漏抓 (晃動 / 模糊 / Wi-Fi), 原地等
@@ -253,10 +253,10 @@ class Course(Segments):
         lr = (P.SEEK_SPEED if x > 0 else -P.SEEK_SPEED) if edge_x else 0
         ud = (-P.SEEK_SPEED if y > 0 else P.SEEK_SPEED) if edge_y else 0   # y < 0: marker 在上方
         if not lr and not ud:
-            self.note("seek%d" % mid, "暫時沒抓到 marker %d (在畫面中間), 原地等" % mid)
+            self.note("seek%d" % mid, "marker %d missed (was mid-frame), waiting in place" % mid)
         else:
-            self.note("seek%d" % mid, "marker %d 跑出畫面, 往%s找" % (
-                mid, "".join(t for t, on in (("右" if x > 0 else "左", lr), ("下" if y > 0 else "上", ud)) if on)))
+            self.note("seek%d" % mid, "marker %d left the frame, searching %s" % (
+                mid, "-".join(t for t, on in (("right" if x > 0 else "left", lr), ("down" if y > 0 else "up", ud)) if on)))
         return (lr, 0, ud, 0)
 
     def align(self, p, dist, tol, use_ud):

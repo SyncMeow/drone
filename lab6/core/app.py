@@ -51,7 +51,7 @@ def run(drone, clock=time, io=None):
 
     apply_speed_scale()
     if (P.SPEED_SCALE_MOVE, P.SPEED_SCALE_UPDOWN, P.SPEED_SCALE_TURN) != (1.0, 1.0, 1.0):
-        print("速度倍率: 平移 x%.2f, 上下 x%.2f, 旋轉 x%.2f" % (P.SPEED_SCALE_MOVE, P.SPEED_SCALE_UPDOWN, P.SPEED_SCALE_TURN))
+        print("Speed scale: move x%.2f, up/down x%.2f, turn x%.2f" % (P.SPEED_SCALE_MOVE, P.SPEED_SCALE_UPDOWN, P.SPEED_SCALE_TURN))
     last_sent = [clock.time()]
     _raw_send = drone.send_rc_control
 
@@ -82,7 +82,7 @@ def run(drone, clock=time, io=None):
         while True:
             now = clock.time()
             if now - last_loop > P.LOOP_WARN:
-                print("  [主迴圈卡住 %.1f 秒: 這段時間按鍵不會有反應]" % (now - last_loop))
+                print("  [main loop stalled %.1f s: keys were ignored meanwhile]" % (now - last_loop))
             last_loop = now
 
             # ---- 保持連線: 太久沒送指令就補一個懸停, 避免 Tello 15 秒自動降落 ----
@@ -105,7 +105,7 @@ def run(drone, clock=time, io=None):
                     drone.send_rc_control(0, 0, 0, 0)
                     key_expire = 0.0
                     if not getattr(drone, "is_flying", False):
-                        print("還沒起飛: 自動起飛")
+                        print("not flying: taking off")
                         try:
                             drone.takeoff()
                         except Exception as e:
@@ -114,7 +114,7 @@ def run(drone, clock=time, io=None):
                     if getattr(drone, "is_flying", False):
                         course.begin(P.START_KEYS[key], now)
                     else:
-                        print("沒有起飛成功, 維持手動")
+                        print("takeoff failed, staying in manual")
             elif key != -1:
                 if key in OPERATION_KEYS:
                     if course.state != MANUAL:
@@ -148,7 +148,7 @@ def run(drone, clock=time, io=None):
                 h = state_field(drone, "h")
                 tof = state_field(drone, "tof")
                 in_air = bool(getattr(drone, "is_flying", False))
-                desc = "電量 %s%%  溫度 %s  高度 h=%s tof=%s  %s  %s" % (
+                desc = "battery %s%%  temp %s  height h=%s tof=%s  %s  %s" % (
                     "?" if battery is None else battery,
                     "?" if temp is None else "%.0f~%.0f°C" % temp,
                     "?" if h is None else "%.0f" % h, "?" if tof is None else "%.0f" % tof,
@@ -156,13 +156,13 @@ def run(drone, clock=time, io=None):
                 if now - last_log >= P.STATUS_LOG_PERIOD:
                     last_log = now
                     span = max(now - fps_t, 1e-6)
-                    desc += "  畫面 %.1f fps (處理 %.1f fps)" % (n_new / span, n_done / span)
+                    desc += "  video %.1f fps (processed %.1f fps)" % (n_new / span, n_done / span)
                     n_new = n_done = 0
                     fps_t = now
-                    log("[狀態] " + desc)
+                    log("[status] " + desc)
                 if temp is not None and temp[1] >= P.TEMP_WARN and not temp_warned:
                     temp_warned = True
-                    log("[警告] 溫度過高! " + desc)
+                    log("[WARN] temperature high! " + desc)
                 elif temp is not None and temp[1] < P.TEMP_WARN - 3:
                     temp_warned = False
                 # 程式以為還在飛 (沒送過 land), 但高度一直是 0 → 多半是 Tello 自己降落 (過熱 / 沒電 / 保護)
@@ -171,7 +171,7 @@ def run(drone, clock=time, io=None):
                         ground_since = now
                     if not self_landed and now - ground_since >= P.SELF_LAND_TIME:
                         self_landed = True
-                        log("[!!!] 偵測到無人機可能自己降落 (沒有送 land): " + desc)
+                        log("[!!!] drone may have landed by itself (no land sent): " + desc)
                 else:
                     ground_since = None
                     self_landed = False
@@ -232,7 +232,7 @@ def run(drone, clock=time, io=None):
 
     except KeyboardInterrupt:                          # Ctrl+C (SIGINT): 立刻降落
         interrupted = True
-        print("\nSIGINT: 發送降落指令")
+        print("\nSIGINT: sending land")
     finally:
         try:
             drone.send_rc_control(0, 0, 0, 0)
@@ -242,7 +242,7 @@ def run(drone, clock=time, io=None):
             print("land failed:", e)
         if getattr(course, "run_t0", None) is not None and not getattr(course, "timer_done", False):
             course.report_time(clock.time())
-        log("[結束] 這次最高溫度 %s, 最低電量 %s" % (
+        log("[end] max temperature %s, min battery %s" % (
             "?" if max_temp is None else "%.0f°C" % max_temp, "?" if min_bat is None else "%d%%" % min_bat))
         drone.streamoff()
         io.close()

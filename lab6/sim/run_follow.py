@@ -37,5 +37,5 @@ for (tt, P, psi, c, H) in d.trace:
     b = abs(math.degrees(math.atan2(v @ r, v @ f)))
     offs.append(b)
     seen += b < half_fov
-print("\n人走 %.0f cm/s: marker 0 在畫面裡 %.0f%% 的時間, 偏離畫面中心最大 %.0f 度 (中位數 %.0f)" %
+print("\nwalker %.0f cm/s: marker 0 in frame %.0f%% of the time, max offset from centre %.0f deg (median %.0f)" %
       (SPEED, 100.0 * seen / len(offs), max(offs), float(np.median(offs))))
