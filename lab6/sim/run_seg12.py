@@ -49,7 +49,7 @@ if r:
 r = W.pose_at(d, "S1_PAUSE3")
 if r:
     print("停在 marker 2 前: %.0f cm (目標 %.0f)" % (M2[1] - r[0][1], 
-          __import__("midterm").M2_STOP_DIST))
+          W.P.M2_STOP_DIST))
 fs, fe = W.STATE_T.get("S2_FOLLOW"), W.STATE_T.get("S3_ALIGN", 1e9)
 ds = []
 for (tt, P, psi, c, H) in d.trace:

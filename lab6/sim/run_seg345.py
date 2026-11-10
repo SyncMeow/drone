@@ -37,4 +37,4 @@ if hs:
     print("第四段向左時的高度: %.0f ~ %.0f cm (marker 4/5 在 120)" % (min(hs), max(hs)))
 P = d.trace[-1][1]
 print("降落點: 離牆 %.0f cm (目標 %.0f), 和 marker 5 左右差 %.0f cm" %
-      (WALL_X - P[0], __import__("midterm").M5_DIST, P[1] - 550.0))
+      (WALL_X - P[0], W.P.M5_DIST, P[1] - 550.0))

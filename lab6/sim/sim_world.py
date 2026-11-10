@@ -1,12 +1,13 @@
 """
-sim_world.py - midterm.py 的離線模擬器 (不用接無人機)
+sim_world.py - main.py (core/) 的離線模擬器 (不用接無人機)
 
 做法:
   * FakeTello 取代 djitellopy.Tello: 只記錄位置 (x, z)、機頭方向、高度;
     每 DT 秒把 send_rc_control 的值當成 cm/s 與 deg/s 累加 (沒有慣性 / 延遲)
   * 虛擬相機: 依無人機目前的位置與方向, 用 calibrate.xml 的相機參數把 SCENE 裡的 ArUco marker
-    投影成 960x720 的畫面, 交給 midterm.py 原本的偵測流程
-  * cv2.waitKey 換成照劇本按鍵, cv2.imshow 關掉, 時鐘換成假時鐘 (跑得比真實時間快)
+    投影成 960x720 的畫面, 交給 core/ 原本的偵測流程
+  * core.app.run(drone, clock, io) 直接傳入假無人機、假時鐘 (跑得比真實時間快) 和 SimIO
+    (wait_key 照劇本按鍵並推進模擬, show 不顯示; on_enter 記錄每個狀態第一次進入的時間)
 
 座標 (俯視): x 向右, z 向前 (起點時機頭朝 +z); 高度 H 向上 (cm); 機頭方向 psi 順時針為正 (deg)
 
@@ -22,7 +23,9 @@ import cv2
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))   # lab6/
-import midterm                                                                   # noqa: E402
+from core import app                                                             # noqa: E402
+from core.params import P                                                        # noqa: E402
+from core.vision import load_calib                                               # noqa: E402
 
 DT = 0.06                                   # 每次 waitKey 前進的模擬時間 (s)
 
@@ -39,13 +42,12 @@ class Clock(object):
 
 
 clock = Clock()
-midterm.time = clock                        # midterm.py 裡的 time.time() 改用假時鐘
 
-K, DIST = midterm.load_calib()
+K, DIST = load_calib()
 W_IMG, H_IMG = 960, 720
-_h = midterm.MARKER_SIZE / 2
+_h = P.MARKER_SIZE / 2
 OBJ = np.array([[-_h, _h, 0], [_h, _h, 0], [_h, -_h, 0], [-_h, -_h, 0]], np.float32)
-_DICT = cv2.aruco.getPredefinedDictionary(midterm.ARUCO_DICT)
+_DICT = cv2.aruco.getPredefinedDictionary(P.ARUCO_DICT)
 _IMG = {}
 SRC = np.array([[40, 40], [240, 40], [240, 240], [40, 240]], np.float32)
 
@@ -62,15 +64,6 @@ def marker_img(mid):
 
 # 記錄每個狀態第一次進入的時間 (給劇本與分析用)
 STATE_T = {}
-_orig_enter = midterm.Course.enter
-
-
-def _enter(self, state, now):
-    STATE_T.setdefault(state, now)
-    _orig_enter(self, state, now)
-
-
-midterm.Course.enter = _enter
 
 # 場景: SCENE[id] = function(t) -> None (看不到) 或 (x, z, mode, 高度, 角度)
 #   mode "wall": 固定朝向; 角度 0 = 面朝起點方向 (-z), 90 = 面朝 -x; "face": 永遠面向無人機 (手持)
@@ -165,8 +158,33 @@ class FakeTello(object):
         return cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
 
-midterm.Tello = FakeTello
 START, START_PSI = (0.0, 0.0), 0.0
+
+
+class SimIO(object):
+    """core.app.run 的 io: 每次 wait_key 推進模擬 DT 秒並回傳劇本的按鍵; 不開視窗"""
+
+    def __init__(self, script, max_iter):
+        self.script = script
+        self.max_iter = max_iter
+        self.i = 0
+
+    def wait_key(self, ms):
+        i = self.i
+        self.i += 1
+        clock.t += DT
+        if FakeTello.last is not None:
+            FakeTello.last.step(DT)
+        return self.script(i) if i < self.max_iter else ord('q')
+
+    def show(self, image):
+        pass
+
+    def close(self):
+        pass
+
+    def on_enter(self, state, now):
+        STATE_T.setdefault(state, now)
 
 
 def run(script, max_iter, start=(0.0, 0.0), start_psi=0.0):
@@ -174,21 +192,9 @@ def run(script, max_iter, start=(0.0, 0.0), start_psi=0.0):
     global START, START_PSI
     START, START_PSI = start, start_psi
     STATE_T.clear()
-    cv2.imshow = lambda *a, **k: None
-    cv2.destroyAllWindows = lambda: None
-    cnt = {"i": 0}
-
-    def fake_wait(ms):
-        i = cnt["i"]
-        cnt["i"] += 1
-        clock.t += DT
-        if FakeTello.last is not None:
-            FakeTello.last.step(DT)
-        return script(i) if i < max_iter else ord('q')
-
-    cv2.waitKey = fake_wait
-    midterm.main()
-    return FakeTello.last
+    drone = FakeTello()
+    app.run(drone, clock=clock, io=SimIO(script, max_iter))
+    return drone
 
 
 def states_line():

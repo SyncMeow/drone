@@ -1,0 +1,239 @@
+// 飛行參數 (midterm 賽道). 讀檔: core/params.py -> P.S3_DIST
+// JSON + "//" 註解 (讀檔時去掉). 每組底下的 key 會攤平成 P.<KEY>, 不能重複, 不能少, 不能多 (拼錯會直接報錯)
+// 標 <-- 實測 的是圖上沒有寫、要現場量的
+// 數值都是實飛調過的: 不要因為模擬結果改這裡
+{
+  // ---- 整體速度倍率 (所有自動飛行 + 鍵盤手動都會乘上) ----------------------------------
+  //  1.0 = 原本的速度; 0.5 = 一半; 1.5 = 1.5 倍 (rc 最多到 100)
+  "speed": {
+    "SPEED_SCALE_MOVE": 1.3,                // 平移: 前後 + 左右
+    "SPEED_SCALE_UPDOWN": 1.3,              // 上升 / 下降
+    "SPEED_SCALE_TURN": 1.1,                // 左右旋轉
+    // 用時間決定距離的動作 (例如鑽桌子往前 S3_UNDER_TIME 秒) 會自動依倍率調整秒數, 讓飛的距離不變
+    "SCALE_TIMES": true
+  },
+
+  "markers": {
+    "MARKER_SIZE": 15.0,                    // marker 邊長 (cm)
+    "ARUCO_DICT": "DICT_4X4_250",           // cv2.aruco.DICT_4X4_250
+    "M0_ID": 0, "M1_ID": 1, "M2_ID": 2, "M3_ID": 3, "M4_ID": 4, "M5_ID": 5
+  },
+
+  // ---- 第一段 ------------------------------------------------------------------
+  "segment1": {
+    "APPROACH_DIST": 70.0,                  // 停在 marker 1 前的距離 (cm); 必須 < 150
+    "SAFE_MIN_DIST": 60.0,                  // 離 marker 小於此值時絕不再往前 (cm)
+    "APPROACH_MAX_TIME": 6.0,               // 接近 marker 1 最多花這麼久 (s), 超過就直接進入右移
+    "NEAR_LOST_EXTRA": 25.0,                // 已靠近 (<= APPROACH_DIST + 此值) 時 marker 1 看不到, 視為抵達
+
+    "SIDE_SPEED": 30,                       // 向右平移速度
+    "SIDE_MODE": "marker2",                 // "marker2": 移到 marker 2 正前方就停; "time": 固定移 SIDE_TIME 秒
+    "SIDE_ALIGN_CM": 15.0,                  // marker 2 的 x <= 此值 (cm) 就算已在它正前方
+    "SIDE_MIN_TIME": 1.0,                   // 至少右移這麼久 (s), 確保離開板子
+    "SIDE_TIME": 2.0,                       // "time" 模式的右移時間; 看不到 marker 2 時的備案
+    "SIDE_MAX_TIME": 1.5,                   // 右移最長時間 (s)
+
+    "FWD_SPEED": 20,                        // 還沒看到 marker 2 時往前飛的速度
+    "FWD_MAX_TIME": 9.0,                    // 往前飛最多幾秒還沒看到 marker 2 就停 (s)
+    "M2_STOP_DIST": 150.0,                  // 停在 marker 2 前的距離 (cm); 圖上寫約 115
+    "M2_TOL": 5.0,                          // M2_STOP_DIST ± 此值內算到位 (cm); 比這近會往後退
+
+    "LEFT_SPEED": 30,                       // 向左平移速度
+    "LEFT_MIN_TIME": 0.0,                   // 至少左移這麼久才開始找 marker 0 (s)
+    "LEFT_MAX_TIME": 4.0                    // 左移這麼久還沒看到 marker 0 就停下來等 (s)
+  },
+
+  // ---- 第二段 ------------------------------------------------------------------
+  "segment2": {
+    "S2_START_HOLD": 1.0,                   // 第一段左移看到 marker 0 進第二段時, 先原地懸停幾秒再開始跟 (s)
+    "FOLLOW_DIST": 45.0,                    // 跟 marker 0 保持的距離 (cm)
+    "FOLLOW_DEAD": 10.0,                    // 距離死區 (cm)
+    "FOLLOW_FB_MAX": 45,                    // 跟隨時前後速度上限 (原 35)
+    "FOLLOW_FB_KP": 0.8,                    // 跟隨時前後增益 (其他段用 FB_KP = 0.5)
+    "FOLLOW_YAW_KP": 1.3,                   // 轉向: (預測的) marker 0 偏離正前方角度 (deg) * 此值 (原 1.1)
+    "FOLLOW_YAW_DEAD": 5.0,
+    "FOLLOW_YAW_MAX": 70,                   // 轉向速度上限 (原 50)
+    "FOLLOW_YAW_MIN": 8,
+    "FOLLOW_LAT_KP": 0.6, "FOLLOW_LAT_MAX": 40,   // 左右平移讓 marker 0 保持在畫面中心 (原上限 30)
+    // 預測轉動方向: 估計 marker 0 (人) 繞著無人機移動的角速度, 往 "FOLLOW_LEAD 秒後它會在的方向" 轉
+    "FOLLOW_LEAD": 0.0,                     // 預測多久之後 (s); 0 = 不預測 (原 0.5)
+    //   實飛: 影像有延遲時, 自己轉動造成的角度變化被算成「人在移動」, 預測方向會反過來 → 往反方向亂轉
+    //   (模擬加 0.3 s 影像延遲: 0.5 時 27% 時間轉錯方向、常跟丟; 0 時 4%), 所以先關掉
+    "FOLLOW_RATE_ALPHA": 0.4,               // 角速度估計的平滑程度
+    "FOLLOW_PRED_MAX": 30.0,                // 預測最多往前多轉幾度 (避免雜訊讓它亂轉)
+    "YAW_RC_TO_DEG": 1.0,                   // rc 轉向值 1 約等於每秒幾度 (用來扣掉自己轉動造成的角度變化)
+    "FOLLOW_EMA_ALPHA": 0.6,                // 跟隨時的平滑程度: 比其他段大 = 反應比較快 (人在走, 不能太延遲)
+    "FOLLOW_SEARCH_DIR": "left",            // 找不到 marker 0 時: "left" = 一直往左轉找直到找到; "last" = 往最後出現的那邊轉 FOLLOW_SEARCH_TIME 秒
+    "FOLLOW_SEARCH_LEFT_MAX": 20.0,         // "left" 模式最多轉幾秒還找不到就懸停 (轉速 50 約 7 秒一圈 -> 約轉 3 圈)
+    "FOLLOW_SEARCH_TIME": 1.0,              // marker 0 跑出畫面時, 往它最後出現的那一側轉幾秒找回來 (s)
+    // 跑出畫面時往哪邊轉: 看 marker 0 最後一次出現在畫面的偏左還偏右 (用當下偵測到的原始位置, 不用平滑過的;
+    //   平滑值會落後, 人快速橫越時可能還停在另一邊)。FOLLOW_LEAD 的速度預測仍然關著 (影像延遲會讓它轉反)
+    "FOLLOW_LOST_HOLD": 0.0,                // marker 0 消失這麼久 (s) 以內當作漏抓: 照剛剛的轉向繼續轉, 不全速找; 0 = 關
+    //   (模擬加延遲時 0.4 反而比較常跟丟, 先關; 實飛如果漏抓一張就猛轉、轉到模糊, 可以試 0.3)
+    "FOLLOW_TURN_FIRST_DEG": 40.0,          // marker 0 偏離中心越多, 往前越慢 (先轉正再前進); 偏 40 度只剩 30% 前進; 0 = 不限制
+    "FOLLOW_SEARCH_YAW": 50,                // 找的時候的轉向速度 (原 35)
+    // 第二段自動接第三段: 看過 marker 0 之後, marker 0 不在畫面 + marker 3 在畫面 持續 S2_TO_S3_TIME 秒 -> 自動進 S3_ALIGN
+    //   (這段時間不找 marker 0, 對準 marker 3); 隨時按 j 也可以切
+    "S2_AUTO_S3": true,                     // False = 只能按 j
+    "S3_BACK_TO_S2": true,                  // 在 S3_ALIGN 時又看到 marker 0 (連續 S3_BACK_FRAMES 張) -> 回到第二段繼續跟
+    "S3_BACK_FRAMES": 3,
+    "S2_TO_S3_M3_GAP": 0.5,                 // 對準 marker 3 的這幾秒中, marker 3 漏抓不超過這麼久 (s) 不算中斷
+    "S2_TO_S3_TIME": 3.0                    // 看過 marker 0 之後, "marker 0 不在 + marker 3 在畫面" 持續這麼久 (s) 就進第三段;
+                                            //   這段時間不轉去找 marker 0, 而是對準 marker 3
+  },
+
+  // ---- 第三段: 鑽桌子 -------------------------------------------------------------
+  "segment3": {
+    "S3_DIST": 150.0,                       // 在 marker 3 前多遠對正 + 下降 (cm)。太近的話下降時 marker 會跑出畫面上緣
+    "S3_DIST_TOL": 10.0,
+    "S3_YAW_EXTRA_TIME": 5.0,               // 對正 marker 3 超時後, 左右 / 角度還不正時最多再修幾秒; 還不行就懸停 (不會斜斜往前鑽)
+    // 開始下降前一定要 "正對" marker 3: 左右置中 + 角度正 (距離不用很準, 鑽的距離會依實際離 marker 3 多遠補)
+    "S3_YAW_TOL": 3.0,                      // 開始下降前角度 (平均過的) 要小於這個 (原本共用 ±6)
+    "S3_YAW_DEAD": 2.0,                     // 角度 (平均過的) 超過這個就轉
+    "S3_ANG_ALPHA": 0.3,                    // 角度平均: 越小越平均
+    "S3_LAT_TOL": 8.0,                      // 左右: marker 3 偏離畫面中心 (cm) 要小於這個
+    "S3_LAT_KI": 0.4, "S3_LAT_I_MAX": 12,   // 左右積分: 偏一邊越久推越大力 (實飛 log: 一直往右飄, rc -11~-15 推不回來, 越來越偏)
+    "S3_LAT_MIN": 8,                        // 超時後只修左右 / 角度時的最小左右速度 (不然偏一點點時推不動)
+    "CAM_PITCH_DEG": 10.0,                  // Tello 鏡頭往下傾的角度: 同高度的東西在畫面上會偏上, 不補償會以為自己比較低 (撞到 marker 3 的原因)
+    "S3_PASS_ALT": 40.0,                    // 鑽桌子前, 機身下方 TOF 量到的高度也要 <= 這個值 (cm); 依 marker 3 下緣高度調, null = 不檢查
+    "S3_CLEAR": 20.0,                       // marker 3 下緣至少要比鏡頭高這麼多 (cm) 才往前鑽 (不撞到 marker 3)
+    "S3_DOWN_SPEED": 25,                    // 下降速度
+    "S3_LOST_EXTRA": 0.6,                   // 下降途中 marker 3 從畫面上緣消失時, 再多降幾秒保險 (s)
+    "MIN_ALT": 30.0,                        // 不再往下的最低高度 (cm, 機身下方 TOF 量測)
+    "S3_DOWN_MAX_TIME": 8.0,
+    "S3_UNDER_SPEED": 44,                   // 鑽桌子往前的速度
+    "S3_UNDER_TIME": 6,                     // 備案: 不知道離 marker 3 多遠時, 往前鑽幾秒
+    // 鑽桌子的距離以 marker 3 為基準: 開始鑽時量到離 marker 3 的距離 z, 往前飛 (z + S3_PAST_CM) 這麼遠就停
+    //   所以不管 S3_ALIGN / S3_DOWN 停在哪, 最後都停在 "marker 3 正下方再往前 S3_PAST_CM" 的地方
+    "S3_PAST_CM": 150.0,                    // 飛過 marker 3 正下方之後再往前多遠 (cm) = 桌子深度 + 餘量   <-- 要停的位置改這個
+    "S3_UNDER_CM_PER_RC": 0.85,             // 速度換算: rc 1 約等於每秒幾 cm  <-- 實測 (飛 3 秒量距離 / (3 * S3_UNDER_SPEED * SPEED_SCALE_MOVE))
+    //   0.85 是用原本的設定反推的 (S3_UNDER_SPEED=44, S3_UNDER_TIME=6 剛好飛 150+75 cm), 離 marker 3 正好 S3_DIST 時行為跟原本一樣
+    "S3_TURN_DEG": 90.0,                    // 鑽過去後順時針轉幾度 (面向牆上的 marker 4)
+    "S3_UP_SPEED": 50,                      // 往上找 marker 4 的速度
+    "S3_UP_MAX_TIME": 5.0,                  // 往上最多幾秒 (保險; 正常是看到 marker 4 或到 S3_UP_ALT 就停) (原 4: 升到 240 不夠)
+    "S3_UP_ALT": 240.0,                     // 往上升到 TOF 這麼高 (cm) 還沒看到 marker 4 就停下來左右找  <-- 實測; null = 只看時間
+    //   實飛 log: 對正 marker 4 時 tof 約 222~231 cm 且 marker 4 還在畫面偏上, 所以 marker 4 大約在 tof 240;
+    //   升的途中看到 marker 4 就會先停, 這個值只是 "看不到時升到哪" (設太低會在 marker 4 下面左右找, 找不到)
+    // 升到 marker 4 高度還沒看到 marker 4 (例如鑽得太短, marker 4 在左邊畫面外): 自己找, 不靠鑽了多遠
+    "S3_FIND4_SPEED": 25,                   // 找 marker 4 時平移 / 後退的速度
+    "S3_FIND4_BACK": 1.0,                   // 先往後退幾秒 (離牆遠一點, 畫面看得比較寬)
+    "S3_FIND4_TIME": 4.0,                   // 先往左找幾秒 (鑽太短 -> marker 4 在左邊), 再往右找 2 倍時間; 都找不到才停下來等
+    // 對正 marker 4 (S3_ALIGN4) 的速度與容許誤差 (其他段: 前後上限 25, 上下 0.3 / 20, 容許 左右 8 / 前後 8 / 高度 7)
+    "S4A_FB_MAX": 40,                       // 前後速度上限 (剛找到 m4 時常離牆很近, 要退很多)
+    "S4A_UD_KP": 0.5, "S4A_UD_MAX": 30,     // 上下增益 / 上限
+    "S4A_LAT_TOL": 10.0,                    // 對正的容許誤差: 左右 (cm)
+    "S4A_DIST_TOL": 15.0,                   //                 前後 (cm)
+    "S4A_UD_TOL": 12.0,                     //                 上下 (cm)
+    "M4_DIST": 150.0,                       // 對正 marker 4 時離牆的距離 (cm); 圖上 marker 4 與桌子相距 150
+    "SEEK_SPEED": 15,                       // 對正時 marker 剛好跑出畫面邊緣: 往它最後出現的方向慢慢找回來的速度
+    "SEEK_EDGE_X_DEG": 18.0,                // marker 消失前偏離正前方超過這個角度 (左右) 才往那邊找 (畫面左右半寬約 27 度)
+    "SEEK_EDGE_Y_DEG": 13.0,                // 上下 (畫面上下半高約 21 度)
+    "SEEK_WAIT": 0.6,                       // 在畫面中間消失時先原地等這麼久 (s), 還沒出現就往最後的方向找
+    "SEEK_TIME": 2.7,                       // 最多找幾秒, 找不到就懸停 (s)
+    "ALIGN_MAX_TIME": 10.0                  // 對正一個 marker 最多花幾秒, 超過就以目前位置繼續
+  },
+
+  // ---- 第四段: 越過板子 -------------------------------------------------------------
+  // 板子比 marker 4 / 5 低, 且 marker 4 和 5 一樣高: 對正 marker 4 後的高度 (= marker 高度) 已經高過板子,
+  // 所以不用爬升, 維持這個高度一路向左就能越過板子, 而且 marker 5 會剛好出現在畫面中間高度。
+  "segment4": {
+    "S4_FIND_M4_TIME": 2.0,                 // 按 k 時先對正 marker 4; 這麼久 (s) 都沒看到 marker 4 就以目前方向直接進第四段
+    "S4_CLIMB_CM": 0.0,                     // 額外爬升多少 (cm); 0 = 不爬升. 若實測發現離板子太近, 可設 10~20 當餘量
+    "S4_CLIMB_SPEED": 30,
+    "S4_CLIMB_MAX_TIME": 4.0,
+    "S4_LEFT_SPEED": 30,                    // 向左平移速度
+    "S4_CROSS_TIME": 1.8,                   // 向左幾秒後算已經越過板子   <-- 實測
+    "S4_DESCEND_AFTER": false,              // 越過板子後是否降回爬升前的高度 (S4_CLIMB_CM > 0 時才有意義)
+    "S4_MAX_TIME": 3.0                      // 向左最多幾秒還沒看到 marker 5 就停下來等
+  },
+
+  // ---- 第五段: 降落在桌上 -------------------------------------------------------------
+  "segment5": {
+    "M5_DIST": 165.0,                       // 離牆 (marker 5) 多遠降落 (cm) = 桌子中心
+    "M5_TOL": 8.0,
+    "S5_LAT_DEAD": 3.0, "S5_LAT_TOL": 10.0, "S5_LAT_MIN": 8,  // 第五段左右: 死區 3 cm, 容許 10 cm (原 5, 桌子 50 cm 寬), 最小速度 8 (其他段是 6 / 8 / 0)
+    // 第五段轉向: 離 marker 5 約 165 cm 時 marker 角度量測很抖 (±5 度以上), 死區 5 + 最小轉速 8 會一直左右小轉;
+    // 每轉一點, marker 在畫面的左右位置就跳 (165 cm * sin 3° ≈ 9 cm), 左右平移跟著來回追 → 降落前一直左右晃
+    "S5_YAW_DEAD": 2.0, "S5_YAW_MIN": 6,    // 角度 (平均過的) 超過 2 度就轉, 最小轉速 6 (原 10 / 0: 容許歪 10 度, 實飛歪 7 度落在桌子左邊)
+    "S5_YAW_TOL": 3.0,                      // 降落前角度 (平均過的) 要小於這個
+    "S5_ANG_ALPHA": 0.15,                   // 第五段角度平均: 越小越平均 (單張雜訊大), 但反應越慢
+    "S5_LAT_KP": 0.6, "S5_LAT_MAX": 25,     // 第五段左右增益 / 速度上限 (其他段 0.4 / 15; 調大讓第五段快一點)
+    "S5_LAT_TRIM": 0.0,                     // 降落點左右微調 (cm, 面向 marker 5): 正 = 往右, 負 = 往左; 例如老是落在桌子右邊就設 -10
+    "S5_SIMPLE": true,                      // True = 簡單版: 連續 S5_ARRIVE_FRAMES 張 marker 5 在中心 + 距離對就降落
+                                            //   (不煞車 / 不等停穩 / 不用 TOF 找桌子); False = 下面那套
+    "S5_ARRIVE_FRAMES": 6,                  // 簡單版: 連續幾張 (建議 5~8; 越大越穩但越慢)
+    "S5_SETTLE": 0.8,                       // 剛看到 marker 5 先煞車懸停幾秒 (第四段向左的速度會帶進來)
+    "S5_LAT_AIM": 4.0,                      // 左右偏差小於這個 (cm) 就不再推, 讓它停下來 (容許誤差 S5_LAT_TOL 內才降落)
+    "S5_STILL_TIME": 1.0, "S5_STILL_CM": 5.0, // 降落前要在範圍內 "停穩" 這麼久 (s): 這段時間左右晃動不超過 5 cm (前後 10 cm)
+    // 對準 marker 5 之後用 TOF 確認下面真的是桌子 (實飛: 對準 m5 / 離牆 167 / 角度 0 也停穩了, 但 tof 只比 h 小 13 cm,
+    //   下面根本不是桌子 -> m5 跟桌子沒有正好對齊, 只靠 m5 再怎麼準都會落在桌外)
+    "S5_TABLE_CHECK": true,                 // False = 照舊, 對準 m5 就降落
+    "S5_TABLE_DROP": 30.0,                  // TOF 比地板小這麼多 (cm) 就算在桌子上方 (桌子比這個高)
+    "S5_SCAN_FIRST": 1,                     // 下面不是桌子時先往哪邊找: 1 = 右 (之前都落在桌子左邊), -1 = 左
+    "S5_SCAN_CM": 60.0,                     // 往一邊最多找多遠 (cm), 找不到再往另一邊
+    "S5_TABLE_LOST": 3.0,                   // 找桌子時 marker 5 連續看不到這麼久 (s) 就直接降落
+    "S5_SCAN_SPEED": 15,                    // 找桌子的平移速度 (慢, TOF 才來得及反應)
+    "S5_TABLE_IN_CM": 20.0,                 // 找到桌子邊緣後再往裡面移多少 (cm) 才降落 (桌子寬約 50 -> 一半少一點)
+    "S5_MAX_TIME": 12.0                     // 對準超過這麼久: 只要大致在桌子上方 (誤差 < 2 倍容許) 就降落
+  },
+
+  "common": {
+    "PAUSE_TIME": 0.8,                      // 每個動作之間的懸停穩定時間 (s)
+    "ARRIVE_FRAMES": 3                      // 連續幾張 frame 都到位才算抵達
+  },
+
+  // ---- 平滑的位置修正 ----------------------------------------------------------------
+  "smoothing": {
+    "EMA_ALPHA": 0.35,                      // 量測值平滑: 越小越平滑但反應越慢
+    "LAT_KP": 0.4, "LAT_DEAD": 6.0, "LAT_MAX": 15,     // 左右: x (cm) -> 速度
+    "UD_KP": 0.3, "UD_DEAD": 15.0, "UD_MAX": 20,       // 上下: y (cm) -> 速度
+    "FB_KP": 0.5, "FB_DEAD": 8.0, "FB_MAX": 25,        // 前後: 距離誤差 (cm) -> 速度
+    "FB_MIN": 10,                           // 前後誤差超出死區時的最小速度
+    "ALT_KP": 0.6, "ALT_DEAD": 4.0, "ALT_MAX": 20,     // 高度 (TOF/高度計, cm) 保持
+    "ALIGN_UD_DEAD": 5.0, "ALIGN_UD_MIN": 8,           // 對正 marker 4 時高度要對得比較準 (第四段就用這個高度越過板子)
+    // 依 marker 角度轉成正對 (第三段對正 marker 3, 第三 / 五段對正 marker 4, 5)
+    "ALIGN_YAW": true,
+    "ALIGN_YAW_KP": 0.6, "ALIGN_YAW_DEAD": 5.0, "ALIGN_YAW_MAX": 20, "ALIGN_YAW_MIN": 8,
+    "SIGN_ALIGN_YAW": -1                    // 同 lab6 的 SIGN_YAW: marker 面朝畫面右側 -> 逆時針轉; 方向反了就乘 -1
+  },
+
+  // ---- 航向 (直線段不要歪 / 轉 90 度) --------------------------------------------------
+  "heading": {
+    "HOLD_HEADING": true,
+    "HEADING_KP": 1.0,
+    "HEADING_MAX": 20,
+    "HEADING_MIN": 8,
+    "HEADING_DEAD": 3.0,
+    "HEADING_SIGN": 1,                      // Tello 的 yaw 順時針為正; 若發現越修越歪, 乘 -1
+    "HEADING_ABORT": 45.0,                  // 直線段偏離超過此角度就停止修正
+    "TURN_MAX": 40,                         // 轉 90 度時的旋轉速度上限
+    "TURN_TOL": 4.0,                        // 轉到目標 ± 此角度內算完成
+    "TURN_MAX_TIME": 8.0,
+    "DEBUG_HEADING": false
+  },
+
+  // ---- 手動 -----------------------------------------------------------------------
+  "manual": {
+    "MANUAL_MAX": [30, 30, 50, 80],         // (左右, 前後, 上下, 旋轉)
+    "KEY_HOLD": 0.2,
+    // 從手動進入第 X 段的按鍵
+    "START_KEYS": {"g": "S1_APPROACH", "h": "S2_FOLLOW", "j": "S3_ALIGN",
+                   "k": "S3_ALIGN4", "l": "S5_ALIGN"}    // k: 先對正 marker 4 再進第四段
+  },
+
+  "system": {
+    "FRAME_IS_RGB": true,                   // djitellopy 2.5 的 frame_read.frame 是 RGB (畫面像負片 / 紅藍對調就是這個); 舊版是 BGR -> 設 False
+    "BATTERY_PERIOD": 3.0,
+    // 狀態監控 (溫度 / 電量 / 高度): 只讀 Tello 自己一直送來的狀態封包, 不送指令, 不會卡住迴圈
+    "MONITOR_PERIOD": 0.5,                  // 多久讀一次 (s)
+    "STATUS_LOG_PERIOD": 10.0,              // 多久在終端機 (log) 印一行狀態 (s)
+    "TEMP_WARN": 85,                        // 機身溫度 (temph, °C) 超過就印警告  <-- 估計值, 看 log 再調
+    "SELF_LAND_TIME": 1.5,                  // 程式以為在飛, 但高度 h 連續這麼久 (s) 都是 0 → 印出「可能自己降落」
+    // Tello 超過 15 秒沒收到任何指令會自己降落。手動模式下沒按鍵時程式原本完全不送指令,
+    // 所以每隔 KEEPALIVE 秒沒送過指令就補送一次懸停 (0, 0, 0, 0)
+    "KEEPALIVE": 0.5,
+    "LOOP_WARN": 1.0,                       // 主迴圈卡住超過這麼久 (s) 就在終端機印出來 (方便查 "不理會輸入")
+    "CONTROL_PERIOD": 0.05,
+    "WINDOW": "drone"
+  }
+}

@@ -1,6 +1,6 @@
-# midterm.py 離線模擬器
+# main.py 離線模擬器
 
-不用接無人機，在電腦上跑 `../midterm.py` 的完整流程。偵測、狀態機、控制都是 midterm.py 原本的程式碼，只有無人機、相機畫面、按鍵、時鐘是假的。
+不用接無人機，在電腦上跑 `../main.py` (`../core/`) 的完整流程。偵測、狀態機、控制都是 core/ 原本的程式碼，只有無人機、相機畫面、按鍵、時鐘是假的。
 
 ## 執行
 
@@ -19,7 +19,8 @@ python run_seg5.py             # 第五段 (按 l)
 
 ## 檔案
 
-- `sim_world.py`: 假無人機 `FakeTello`、虛擬相機 (用 `../calibrate.xml` 把 `SCENE` 裡的 marker 投影成畫面)、假按鍵、假時鐘。
+- `sim_world.py`: 假無人機 `FakeTello`、虛擬相機 (用 `../calibrate.xml` 把 `SCENE` 裡的 marker 投影成畫面)、假按鍵、假時鐘; 用 `core.app.run(drone, clock, io)` 直接傳入, 不 monkey-patch。
+- `baseline/`: 六個劇本的輸出基準 (`bash baseline/run_all.sh /tmp/new && diff -r baseline /tmp/new`; 時間戳已遮掉)。
 - `run_*.py`: 各段的劇本。改 `SCENE` 裡 marker 的位置 / 高度 / 角度，就能測不同場地。
 
 場景座標 (俯視): x 向右、z 向前 (起點時機頭朝 +z)，高度單位 cm。
