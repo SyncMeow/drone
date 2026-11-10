@@ -1,0 +1,14 @@
+name: uav
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pip
+  - tk
+  - pip:
+      - djitellopy==2.5.0
+      - opencv-contrib-python==4.10.0.84
+      - numpy==2.0.2
+      - av==15.1.0
+      - pillow
+      - matplotlib

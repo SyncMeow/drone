@@ -1,0 +1,6 @@
+#!/bin/sh
+
+rm -rf ./__pycache__
+rm -f ./log/*
+rm -f ./*.zip
+rm -r ./out/lab*/*

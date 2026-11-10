@@ -1,0 +1,17 @@
+#!/bin/bash
+
+LAB="$1"
+[ "$#" -lt 1 ] && { echo "Lab index must be specified."; exit 1; }
+
+PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$PROJECT_DIR"
+
+OUTPUT_ZIP="113550023_Lab$LAB.zip"
+
+if [ -f "$OUTPUT_ZIP" ]; then
+    rm "$OUTPUT_ZIP"
+fi
+
+zip -r "$OUTPUT_ZIP" imgs/lab$LAB out/lab$LAB lab$LAB.py -x "imgs/lab$LAB/*.mp4" "out/lab$LAB/*" "*.DS_Store" "*__pycache__*"
+
+echo "Compact complete : $PROJECT_DIR/$OUTPUT_ZIP"

@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# macOS
+.DS_Store
+__MACOSX/
+
+# 作業打包 / 暫存
+*.zip
+ziXdCubN
+
+# log
+*.log
+log/
+
+# 大檔影片
+*.mp4
