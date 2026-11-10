@@ -1,0 +1,15 @@
+Battery: 80 %
+速度倍率: 平移 x1.30, 上下 x1.30, 旋轉 x1.10
+[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  MANUAL  ON GROUND  畫面 0.0 fps (處理 0.0 fps)
+還沒起飛: 自動起飛
+進入 S5_ALIGN
+[1000.4] MANUAL -> S5_ALIGN
+  暫時沒抓到 marker 5 (在畫面中間), 原地等
+  看不到 marker 5, 懸停等待
+[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S5_ALIGN  FLYING  畫面 16.7 fps (處理 16.6 fps)
+[HH:MM:SS] [狀態] 電量 ?%  溫度 ?  高度 h=? tof=?  S5_ALIGN  FLYING  畫面 16.7 fps (處理 16.7 fps)
+LAND
+[HH:MM:SS] [結束] 這次最高溫度 ?, 最低電量 ?
+
+狀態: S5_ALIGN@0.4
+降落點: 離牆 169 cm (目標 165), 和 marker 5 左右差 -2 cm
