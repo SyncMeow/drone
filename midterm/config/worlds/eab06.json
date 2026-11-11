@@ -25,9 +25,9 @@
     // moves ~45-50 cm right (SIDE_MAX_TIME 1.5 s at rc 30 x 1.3), so with 100 cm the real flights would hit
     // it in S1_FORWARD -> 60 wide here (parameters win over the slide estimate).
     {"name": "board1",      "min": [200, -30, 0],    "max": [260, 30, 110],   "color": [235, 235, 235]},
-    {"name": "low_box",     "min": [260, -30, 0],    "max": [310, 30, 40],    "color": [170, 130, 90]},   // length unknown (slide)
+    {"name": "low_box",     "min": [260, -30, 0],    "max": [310, -10, 120],    "color": [170, 130, 90]},   // length unknown (slide)
     //   50 cm gap X 310..360
-    {"name": "box_100",     "min": [360, -10, 0],    "max": [460, 40, 50],    "color": [170, 130, 90]},
+    {"name": "box_100",     "min": [360, -30, 0],    "max": [460, -10, 120],    "color": [170, 130, 90]},
     // board 2 carries marker 2 on its west face (X = 460), offset to the south (drone's right).
     // NOTE: the old run_seg12.py put marker 2 90 cm right and only 170 cm past marker 1. With M2_STOP_DIST
     // = 150 the drone would then stop beside board 1 and hit it in S1_LEFT, so marker 2 moved to X = 460
@@ -36,8 +36,8 @@
     {"name": "board2",      "min": [460, -110, 0],   "max": [480, -10, 120],  "color": [235, 235, 235]},
 
     // ---- segment 2 ----
-    {"name": "chair_seat",  "min": [677, 307, 0],    "max": [723, 353, 45],   "color": [60, 70, 110]},
-    {"name": "chair_back",  "min": [677, 347, 45],   "max": [723, 353, 90],   "color": [60, 70, 110]},
+    {"name": "chair_seat",  "min": [747, 90, 0],    "max": [793, 136, 55],   "color": [60, 70, 110]},
+    {"name": "chair_back",  "min": [747, 130, 55],   "max": [793, 136, 105],   "color": [60, 70, 110]},
 
     // ---- segment 4 ----
     // board 3 between markers 4 and 5 (see the marker 5 note below), top lower than the markers; 45 wide so it
